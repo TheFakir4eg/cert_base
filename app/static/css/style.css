@@ -1,0 +1,62 @@
+/* /app/static/css/style.css*/
+.btn {
+    border-radius: 8px;   /* скругление */
+    padding: 8px 16px;    /* внутренние отступы */
+    font-size: 16px;      /* читаемый размер */
+}
+body {
+    background-color: #f8f9fa;
+}
+.card-header {
+    background-color: #e9ecef;
+    font-weight: bold;
+}
+.form-control, .form-select {
+    max-width: 400px;
+}
+.char-input {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    width: 24px;
+    height: 30px;
+    text-align: center;
+    font-size: 14px;
+    display: inline-block;
+    margin-right: 1px; /* Уменьшенный отступ */
+    margin-left: 1px;
+    vertical-align: middle;
+}
+.char-input-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px; /* Единый зазор для полей и точек */
+}
+@media print {
+    body {
+        background-color: white;
+    }
+    .card {
+        box-shadow: none;
+    }
+}
+.col-md-3, .col-md-4, .col-md-6 {
+    padding-right: 5px; /* Уменьшаем правый padding */
+    padding-left: 5px; /* Уменьшаем левый padding */
+}
+.is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+}
+
+/* Центрирование модальных окон */
+.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 1rem);
+}
+
+.modal-dialog-centered::before {
+    display: block;
+    height: calc(100vh - 1rem);
+    content: "";
+}

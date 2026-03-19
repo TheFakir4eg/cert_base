@@ -1,0 +1,12 @@
+flask db migrate -m "add comment"
+flask db upgrade
+
+db.session.flush() -  позволяет получить id новой группы до commit()
+
+работа модального окна "подтверждение удаления"
+    Пользователь нажимает на кнопку с data-confirm="true".
+    JavaScript перехватывает событие click.
+    Он читает data-title, data-confirm-text и data-confirm-form-id.
+    Заполняет универсальное модальное окно этими данными.
+    При нажатии на кнопку "Да" в модальном окне, JavaScript получает ссылку на форму (по id) и вызывает form.submit(), что отправляет POST-запрос на сервер.
+    Маршрут places_routes.py обрабатывает запрос

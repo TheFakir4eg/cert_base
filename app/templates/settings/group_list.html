@@ -1,0 +1,12 @@
+<!-- app/templates/permisions/group_list.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Список групп</h2>
+<ul class="list-group">
+{% for group in groups %}
+    <li class="list-group-item">{{ group.text }}</li>
+{% endfor %}
+</ul>
+<a href="{{ url_for('settings.settings') }}" class="btn btn-secondary mt-3">Назад</a>
+{% endblock %}

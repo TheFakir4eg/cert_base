@@ -1,0 +1,73 @@
+<!-- app/templates/places/list.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Список мест</h2>
+
+    <!-- Кнопка для открытия модального окна -->
+    <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createPlaceModal">
+        Создать место
+    </button>
+
+    <ul class="list-group">
+    {% for place in places %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ place.name }} - {{ place.address }} - {{ place.note }}
+            <!-- Форма удаления -->
+            <form method="POST" style="display:inline;" id="delete-form-{{ place.id }}">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="place_id" value="{{ place.id }}">
+                <!-- Добавляем id и onclick к кнопке -->
+                <button type="button"
+                        class="btn btn-danger btn-sm"
+                        title="Удалить {{ place.name }}"
+                        data-confirm="true"
+                        data-confirm-title="Удаление места"
+                        data-confirm-text="Вы уверены, что хотите удалить место «{{ place.name }}»?"
+                        data-confirm-form-id="delete-form-{{ place.id }}">
+                    ❌
+                </button>
+            </form>
+        </li>
+    {% else %}
+        <!-- Этот блок отображается, если список places пуст -->
+        <li class="list-group-item text-center text-muted">Список мест пуст.</li>
+    {% endfor %}
+    </ul>
+    <a href="{{ url_for('settings.settings') }}" class="btn btn-secondary mt-3">Назад</a>
+</div>
+
+<!-- Модальное окно для создания места -->
+<div class="modal fade" id="createPlaceModal" tabindex="-1" aria-labelledby="createPlaceModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createPlaceModalLabel">Создать новое место</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST">
+          <div class="modal-body">
+              <input type="hidden" name="action" value="create"> <!-- Скрытое поле действия -->
+              <div class="mb-3">
+                  <label for="name" class="form-label">Наименование *</label>
+                  <input type="text" class="form-control" id="name" name="name" required>
+              </div>
+              <div class="mb-3">
+                  <label for="address" class="form-label">Адрес</label>
+                  <input type="text" class="form-control" id="address" name="address">
+              </div>
+              <div class="mb-3">
+                  <label for="note" class="form-label">Комментарий</label>
+                  <input type="text" class="form-control" id="note" name="note">
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            <button type="submit" class="btn btn-primary">Создать</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

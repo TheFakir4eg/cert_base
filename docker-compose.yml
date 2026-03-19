@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  db:
+    image: mysql:8.4 # Указываем конкретную версию
+    container_name: cert_base_mysql # Удобное имя контейнера
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Cfyfnjhbq2026! # Пароль root внутри контейнера - Санаторий
+      MYSQL_DATABASE: cert_db # Автоматически создаст базу
+      MYSQL_USER: admin # Автоматически создаст пользователя
+      MYSQL_PASSWORD: Ytrhjvfyn16 # Пароль для созданного пользователя
+    ports:
+      - "3307:3306" # Мапим порт 3307 локально 3306 в контейнере (можно изменить)
+    volumes:
+      - mysql_/var/lib/mysql # Для сохранения данных между запусками контейнеров
+
+volumes:
+  mysql_data # Именованный том Docker

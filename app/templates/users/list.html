@@ -1,0 +1,90 @@
+<!-- app/templates/users/list.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Список пользователей</h2>
+
+    <!-- Кнопка для открытия модального окна (для создания) -->
+    <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createUserModal" id="openCreateModalBtn">
+        Создать пользователя
+    </button>
+
+    <ul class="list-group">
+        {% for user in users %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ user.name }} (Группа: {{ user.user_group.text }}) - Активен: {{ 'Да' if user.active else 'Нет' }}
+                <div>
+                    <!-- Кнопка редактирования -->
+                    <button type="button"
+                            class="btn btn-warning btn-sm me-1 edit-user-btn"
+                            title="Редактировать {{ user.name }}"
+                            data-user-id="{{ user.id }}"
+                            data-login="{{ user.login }}"
+                            data-name="{{ user.name }}"
+                            data-group-id="{{ user.group_id }}"
+                            data-active="{{ 'true' if user.active else 'false' }}">
+                        ✏️
+                    </button>
+                    
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('settings.settings') }}" class="btn btn-secondary mt-3">Назад</a>
+</div>
+
+<!-- Модальное окно для создания/редактирования пользователя -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createUserModalLabel">Создать нового пользователя</h5> <!-- Заголовок изменится для редактирования -->
+        
+      </div>
+      <form method="POST" id="userForm"> <!-- Добавим ID форме для JS -->
+          <div class="modal-body">
+              <input type="hidden" name="action" id="formAction" value="create"> <!-- Скрытое поле действия -->
+              <input type="hidden" name="user_id" id="userIdInput" value=""> <!-- Скрытое поле для ID пользователя (для редактирования) -->
+              <div class="mb-3">
+                  <label for="login" class="form-label">Логин пользователя *</label>
+                  <input type="text" class="form-control" id="login" name="login" required>
+              </div>
+              <div class="mb-3">
+                  <label for="name" class="form-label">Имя пользователя *</label>
+                  <input type="text" class="form-control" id="name" name="name" required>
+              </div>
+              <div class="mb-3">
+                  <label for="password" class="form-label">Пароль *</label>
+                  <input type="password" class="form-control" id="password" name="password" required>
+                  <small class="form-text text-muted" id="passwordHelp">Оставьте пустым, если не хотите менять пароль при редактировании.</small>
+              </div>
+              <div class="mb-3">
+                  <label for="group_id" class="form-label">Группа *</label>
+                  <select class="form-select" id="group_id" name="group_id" required>
+                      <option value="" disabled selected>Выберите группу...</option>
+                      {% for group in groups %}
+                          <option value="{{ group.id }}">{{ group.text }}</option>
+                      {% endfor %}
+                  </select>
+              </div>
+              <div class="mb-3 form-check">
+                  <input type="checkbox" class="form-check-input" id="active" name="active">
+                  <label class="form-check-label" for="active">Активен</label>
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelEditBtn" style="display:none;">Отмена</button> <!-- Кнопка отмены для редактирования -->
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closeModalBtn">Закрыть</button> <!-- Кнопка закрытия для создания -->
+            <button type="submit" class="btn btn-primary" id="submitBtn">Создать</button> <!-- Текст кнопки изменится -->
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/userModalWindow.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,14 @@
+<!-- /templates/index.html-->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">    
+    <!-- Кнопка Certificates -->
+    <div class="col-md-3 mb-3">
+        <a href="{{ url_for('certificates.list_certificates') }}" class="btn btn-success d-block h-100">
+            Сертификаты (Certificates)
+        </a>
+    </div>
+
+</div>
+{% endblock %}
