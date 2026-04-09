@@ -29,14 +29,14 @@ with app.app_context():
         existing_user.name = 'fakir'
         existing_user.note = 'Main admin user (updated)'
         existing_user.group_id = group.id
-        existing_user.set_password('Ytrhjvfyn16!!!')
+        existing_user.set_password('123456')
         
         db.session.commit()
         print("Данные пользователя 'fakir' успешно обновлены!")
 
     else:
         new_user = User(login = 'fakir', name='fakir', note='Main admin user', group_id=group.id) # Указываем id группы
-        new_user.set_password('Ytrhjvfyn16!!!') # Установим ему пароль
+        new_user.set_password('123456') # Установим ему пароль
 
         db.session.add(new_user)
         db.session.commit()

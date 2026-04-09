@@ -43,18 +43,21 @@ def create_app():
     with app.app_context():
         from app import models
         
-    # Регистрируем blueprints (если используете) или импортируем маршруты
-    # from app.routes import bp as main_bp
-    # app.register_blueprint(main_bp)
-    #from app import routes # Простой импорт для регистрации маршрутов
+    # Регистрируем blueprints 
     from .routes.auth_routes import auth_bp
     from .routes.certificate_routes import certificates_bp
     from .routes.places_routes import places_bp
     from .routes.settings_routes import settings_bp
     from .routes.users_routes import users_bp
+    #from .routes.permission_group_manager import pgm_bp
+    from .routes.group_routes import group_bp
+    
     app.register_blueprint(auth_bp)
     app.register_blueprint(places_bp)
     app.register_blueprint(certificates_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(settings_bp)
+    #app.register_blueprint(pgm_bp)
+    app.register_blueprint(group_bp)
+    
     return app

@@ -1,12 +1,65 @@
-<!-- app/templates/permisions/group_list.html -->
+<!-- app/templates/settings/group_list.html -->
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Список групп</h2>
-<ul class="list-group">
-{% for group in groups %}
-    <li class="list-group-item">{{ group.text }}</li>
-{% endfor %}
-</ul>
-<a href="{{ url_for('settings.settings') }}" class="btn btn-secondary mt-3">Назад</a>
+<div class="container mt-5">
+    <a href="{{ url_for('settings.settings') }}" class="btn btn-secondary mt-3">Назад</a>
+    <h2>Список групп доступа</h2>
+    <button type="button" class="btn btn-info mb-3" id="createGroupBtn">
+        Создать
+    </button>
+
+    <ul class="list-group" id="groupsList">
+    {% for group in groups %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ group.text }}
+            <div>
+                <button type="button"
+                        class="btn btn-warning btn-sm me-1 edit-group-btn"
+                        title="Редактировать"
+                        data-group-id="{{ group.id }}"
+                        data-group-name="{{ group.text }}">
+                    ✏️
+                </button>
+                <button type="button"
+                        class="btn btn-danger btn-sm delete-group-btn"
+                        title="Удалить"
+                        data-group-id="{{ group.id }}"
+                        data-group-name="{{ group.text }}">
+                    🗑️
+                </button>
+            </div>
+        </li>
+    {% endfor %}
+    </ul>
+</div>
+
+<!-- Модальное окно для редактирования/создания группы -->
+<div class="modal fade" id="groupModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="groupModalTitle">Загрузка...</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="groupModalBody">
+                <!-- Содержимое будет загружено сюда через AJAX -->
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <!-- Подключаем обновлённый JS файл -->
+    <script src="{{ url_for('static', filename='js/groupModalWindow.js') }}"></script>
 {% endblock %}

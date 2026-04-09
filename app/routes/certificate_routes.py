@@ -2,7 +2,7 @@
 from flask import Blueprint, flash, redirect, render_template, current_app, request, url_for
 from flask_login import login_required
 from app import db
-from app.models import Certificate, Place, User
+from app.models import Certificate, Place, ServiceGroup, User
 
 certificates_bp = Blueprint('certificates', __name__)
 
@@ -23,6 +23,7 @@ def list_certificates():
             total_amount = request.form.get('total_amount')
             # Получаем ID как строки из формы
             place_id_str = request.form.get('place_id')
+            servicegroup_id_str = request.form.get('servicegroup_id')
             user_id_str = request.form.get('user_id') # Берём ID создателя
             note = request.form.get('note')
 
@@ -36,6 +37,7 @@ def list_certificates():
                     # Конвертируем ID
                     # place_id может быть пустым (None), user_id - обязателен
                     place_id = int(place_id_str) if place_id_str else None
+                    servicegroup_id = int(servicegroup_id_str) if servicegroup_id_str else None
                     user_id = int(user_id_str) # user_id обязателен, предполагаем, что всегда приходит
 
                     # Проверим, существуют ли выбранные place и user
@@ -59,6 +61,7 @@ def list_certificates():
                         series=series,
                         total_amount=total_amount,
                         place_id=place_id, # ID места (может быть None)
+                        servicegroup_id=servicegroup_id,
                         user_id=user_id, # ID пользователя-создателя (обязательно)
                         expired_amount=total_amount, # Изначально остаток равен номиналу
                         note=note
@@ -95,9 +98,9 @@ def list_certificates():
     #         db.joinedload(Certificate.user)   # Загружаем связанных User
     #     )
     # ).scalars().all()
-    # Получаем списки мест и пользователей для формы создания
+    # Получаем списки 
     places = db.session.execute(db.select(Place)).scalars().all()
     users = db.session.execute(db.select(User)).scalars().all()
+    servicegroups = db.session.execute(db.select(ServiceGroup)).scalars().all()
     
-    #return render_template('certificates/list.html', certificates=certificates)
-    return render_template('certificates/list.html', certificates=certificates, places=places, users=users)
+    return render_template('certificates/list.html', certificates=certificates, places=places, users=users, servicegroups=servicegroups)

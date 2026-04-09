@@ -21,6 +21,7 @@
                         <th scope="col">Номинал</th>
                         <th scope="col">Остаток</th>
                         <th scope="col">Место выдачи</th>
+                        <th scope="col">Группа услуг</th>
                         <th scope="col">Создатель</th>
                         <th scope="col">Примечание</th>
                         <!-- Добавьте другие колонки по необходимости -->
@@ -37,6 +38,7 @@
                         <td>{{ cert.total_amount }}</td>
                         <td>{{ cert.expired_amount }}</td>
                         <td>{{ cert.place.name if cert.place else 'Не указано' }}</td> <!-- Отображение связанного места -->
+                        <td>{{ cert.servicegroup.name if cert.servicegroup else 'Не указано' }}</td> <!-- Отображение связанной группы услуг -->
                         <td>{{ cert.user.name }}</td> <!-- Отображение связанного пользователя -->
                         <td>{{ cert.note or '' }}</td> <!-- Проверка на None -->
                         <!-- Добавьте другие ячейки по необходимости -->
@@ -89,6 +91,15 @@
                       <option value="">Не выбрано</option>
                       {% for place in places %}
                           <option value="{{ place.id }}">{{ place.name }}</option>
+                      {% endfor %}
+                  </select>
+              </div>
+              <div class="mb-3">
+                  <label for="servicegroup_id" class="form-label">Группа услуг</label>
+                  <select class="form-select" id="servicegroup_id" name="servicegroup_id">
+                      <option value="">Не выбрано</option>
+                      {% for servicegroup in servicegroups %}
+                          <option value="{{ servicegroup.id }}">{{ servicegroup.name }}</option>
                       {% endfor %}
                   </select>
               </div>

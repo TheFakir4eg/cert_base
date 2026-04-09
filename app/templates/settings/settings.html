@@ -6,20 +6,25 @@
 <div class="container mt-5">
         <!-- Кнопка для Places -->
         <div class="col-md-3 mb-3">
-            <a href="{{ url_for('places.list_places') }}" class="btn btn-primary d-block h-100">
-                Места (Places)
+            <a href="{{ url_for('places.list_places') }}" class="btn btn-info d-block h-100">
+                Места выдачи
             </a>
         </div>       
         <!-- Кнопка для Users -->
         <div class="col-md-3 mb-3">
             <a href="{{ url_for('users.list_users') }}" class="btn btn-info d-block h-100">
-                Пользователи (Users)
+                Пользователи
             </a>
         </div>
         <!-- Кнопка для Groups -->
         <div class="col-md-3 mb-3">
-            <a href="{{ url_for('settings.list_groups') }}" class="btn btn-warning d-block h-100">
-                Группы (Groups)
+            <a href="{{ url_for('settings.list_groups') }}" class="btn btn-info d-block h-100">
+                Группы пользователей
+            </a>
+        </div>
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('settings.servicegroup') }}" class="btn btn-info d-block h-100">
+                Группы услуг
             </a>
         </div>
         <a href="{{ url_for('auth.index') }}" class="btn btn-secondary mt-3">Назад</a>

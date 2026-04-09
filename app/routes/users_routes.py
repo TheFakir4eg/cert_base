@@ -37,7 +37,7 @@ def list_users():
                         return redirect(url_for('users.list_users'))
 
                     # Создаём нового пользователя
-                    new_user = User(name=login, group_id=int(group_id_str), note=f'Created by {current_user.name}')
+                    new_user = User(login = login, name=name, group_id=int(group_id_str), note=f'Created by {current_user.name}')
                     new_user.set_password(password)
                     new_user.active = True
 

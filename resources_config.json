@@ -1,0 +1,94 @@
+{
+  "resources": [
+    {
+      "name": "settings_page",
+      "description": "Страница \"Настройки\"",
+      "route": "/settings"
+    },
+    {
+      "name": "places_page",
+      "description": "Страница \"Места выдачи\"",
+      "route": "/places"
+    },
+    {
+      "name": "places_add_btn",
+      "description": "Кнопка \"Добавить\" на странице \"Места выдачи\"",
+      "route": null
+    },
+    {
+      "name": "places_edit_btn",
+      "description": "Кнопка \"Редактировать\" на странице \"Места выдачи\"",
+      "route": null
+    },
+    {
+      "name": "places_delete_btn",
+      "description": "Кнопка \"Удалить\" на странице \"Места выдачи\"",
+      "route": null
+    },
+    {
+      "name": "users_page",
+      "description": "Страница \"Пользователи\"",
+      "route": "/users"
+    },
+    {
+      "name": "users_add_btn",
+      "description": "Кнопка \"Добавить\" на странице \"Пользователи\"",
+      "route": null
+    },
+    {
+      "name": "users_edit_btn",
+      "description": "Кнопка \"Редактировать\" на странице \"Пользователи\"",
+      "route": null
+    },
+    {
+      "name": "users_delete_btn",
+      "description": "Кнопка \"Удалить\" на странице \"Пользователи\"",
+      "route": null
+    },
+    {
+      "name": "users_group_page",
+      "description": "Страница \"Группы пользователей\"",
+      "route": "/settings/groups"  
+    },
+    {
+      "name": "users_group_add_btn",
+      "description": "Кнопка \"Добавить\" на странице \"Группы пользователей\"",
+      "route": "/groups/get_group_modal_content/new" 
+    },
+    {
+      "name": "users_group_edit_btn",
+      "description": "Кнопка \"Редактировать\" на странице \"Группы пользователей\"",
+      "route": "/api/group/<int:group_id>/update" 
+    },
+    {
+      "name": "users_group_delete_btn",
+      "description": "Кнопка \"Удалить\" на странице \"Группы пользователей\"",
+      "route": null 
+    },
+    {
+      "name": "servicegroup_page",
+      "description": "Страница \"Группы услуг\"",
+      "route": "/servicegroup" 
+    },
+    {
+      "name": "servicegroup_add_btn",
+      "description": "Кнопка \"Добавить\" на странице \"Группы услуг\"",
+      "route": null 
+    },
+    {
+      "name": "servicegroup_edit_btn", 
+      "description": "Кнопка \"Редактировать\" на странице \"Группы услуг\"",
+      "route": null 
+    },
+    {
+      "name": "servicegroup_delete_btn",
+      "description": "Кнопка \"Удалить\" на странице \"Группы услуг\"",
+      "route": null 
+    },
+    {
+      "name": "certificates_page",
+      "description": "Страница \"Сертификаты\"",
+      "route": "/certificates"
+    }
+  ]
+}

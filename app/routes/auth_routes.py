@@ -1,7 +1,7 @@
 # app/routes/auth_routes.py
 import os
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
-from flask_login import login_user, logout_user, login_required, current_user # Добавим current_user
+from flask_login import login_user, logout_user, login_required, current_user 
 from app import db
 from app.models import User
 
@@ -57,12 +57,11 @@ def logout():
     username = current_user.name if current_user.is_authenticated else session.get('username', 'Пользователь')
     current_app.logger.info(f'Выход пользователя: {username}')
     logout_user() # Отмечаем пользователя как вышедшего
-    # session.clear() # <-- ЗАКОММЕНТИРУЙТЕ ЭТО! Оно может сбрасывать сессию Flask-Login
     flash(f'👋 До свидания, {username}! Вы вышли из системы.', 'info')
     return redirect(url_for('auth.login'))
 
 @auth_bp.route('/index', methods=['GET', 'POST'])
-@login_required # Защита маршрута
+@login_required 
 def index():
     # current_user доступен здесь
     current_app.logger.info(f'Доступ к индексу пользователем: {current_user.name}')

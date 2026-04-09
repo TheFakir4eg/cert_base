@@ -1,0 +1,126 @@
+<!-- app/templates/settings/_group_modal_body.html -->
+<div class="row">
+    <!-- Левая колонка: Управление правами -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Права доступа ({{ group.text }})</h5>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1" id="addPermissionBtn">
+                        <span>+</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="removeSelectedPermissionBtn">
+                        <span>×</span>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Форма для добавления нового разрешения (скрыта по умолчанию) -->
+                <form id="addPermissionForm" style="display:none;" class="mb-3">
+                    <div class="row g-2">
+                        <div class="col">
+                            <select class="form-select" id="newResourceSelect" required>
+                                <option value="">Выберите ресурс...</option>
+                                {% for resource in resources %}
+                                    <option value="{{ resource.id }}">{{ resource.description or resource.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col">
+                            <select class="form-select" id="newPermissionTypeSelect" required>
+                                <option value="">Тип доступа...</option>
+                                <option value="can_view">Просмотр</option>
+                                <option value="can_add">Добавление</option>
+                                <option value="can_edit">Редактирование</option>
+                                <option value="can_delete">Удаление</option>
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-sm btn-success" id="saveNewPermissionBtn">Добавить</button>
+                            <button type="button" class="btn btn-sm btn-secondary" id="cancelAddPermissionBtn">Отмена</button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Список текущих разрешений -->
+                <ul class="list-group" id="permissionsList">
+                    {% for permission in permissions_dict.values() %}
+                        {% set resource = permission.resource %}
+                        {% if resource %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center" data-resource-id="{{ resource.id }}">
+                            <div class="d-flex justify-content-between w-100">
+                                <span>{{ resource.description or resource.name }}</span>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-info permission-btn" data-permission="can_view" data-resource-id="{{ resource.id }}" data-value="{{ permission.can_view }}">
+                                        {{ '👁️' if permission.can_view else '◻️' }}
+                                    </button>
+                                    <button type="button" class="btn btn-outline-success permission-btn" data-permission="can_add" data-resource-id="{{ resource.id }}" data-value="{{ permission.can_add }}">
+                                        {{ '➕' if permission.can_add else '◻️' }}
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning permission-btn" data-permission="can_edit" data-resource-id="{{ resource.id }}" data-value="{{ permission.can_edit }}">
+                                        {{ '✏️' if permission.can_edit else '◻️' }}
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger permission-btn" data-permission="can_delete" data-resource-id="{{ resource.id }}" data-value="{{ permission.can_delete }}">
+                                        {{ '🗑️' if permission.can_delete else '◻️' }}
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="checkbox" class="form-check-input ms-2 permission-checkbox" data-resource-id="{{ resource.id }}">
+                        </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="list-group-item text-muted text-center">Нет назначенных разрешений.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Правая колонка: Список пользователей -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Пользователи ({{ users_in_group|length }})</h5>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1" id="addUserBtn">
+                        <span>+</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="removeSelectedUserBtn">
+                        <span>×</span>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Форма для добавления нового пользователя (скрыта по умолчанию) -->
+                <form id="addUserForm" style="display:none;" class="mb-3">
+                    <div class="row g-2">
+                        <div class="col">
+                            <select class="form-select" id="newUserSelect" required>
+                                <option value="">Выберите пользователя...</option>
+                                {% for user in users_not_in_group %}
+                                    <option value="{{ user.id }}">{{ user.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-sm btn-success" id="saveNewUserBtn">Добавить</button>
+                            <button type="button" class="btn btn-sm btn-secondary" id="cancelAddUserBtn">Отмена</button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Список пользователей в группе -->
+                <ul class="list-group" id="usersList">
+                    {% for user in users_in_group %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center" data-user-id="{{ user.id }}">
+                        {{ user.name }}
+                        <input type="checkbox" class="form-check-input user-checkbox" value="{{ user.id }}">
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted text-center">Группа пуста.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

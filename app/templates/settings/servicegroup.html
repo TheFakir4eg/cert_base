@@ -1,0 +1,52 @@
+<!-- app/templates/settings/servicegroup.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Список групп услуг</h2>
+
+    <!-- Кнопка для открытия модального окна -->
+    <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createSGModal">
+        Создать
+    </button>
+
+    <ul class="list-group">
+        {% for servicegroup in servicegroups %}
+            <li class="list-group-item">{{ servicegroup.name }} - {{ servicegroup.note }}</li>
+        {% else %}
+            <!-- Этот блок отображается, если список servicegroup пуст -->
+            <li class="list-group-item text-center text-muted">Список групп пуст.</li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('settings.settings') }}" class="btn btn-secondary mt-3">Назад</a>
+</div>
+
+<!-- Модальное окно для создания группы услуг -->
+<div class="modal fade" id="createSGModal" tabindex="-1" aria-labelledby="createSGModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createSGModalLabel">Создать новую группу</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST">
+          <div class="modal-body">
+              <input type="hidden" name="action" value="create"> <!-- Скрытое поле действия -->
+              <div class="mb-3">
+                  <label for="name" class="form-label">Наименование *</label>
+                  <input type="text" class="form-control" id="name" name="name" required>
+              </div>
+              <div class="mb-3">
+                  <label for="note" class="form-label">Комментарий</label>
+                  <input type="text" class="form-control" id="note" name="note">
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            <button type="submit" class="btn btn-primary">Создать</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
