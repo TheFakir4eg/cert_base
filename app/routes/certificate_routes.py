@@ -3,11 +3,13 @@ from flask import Blueprint, flash, redirect, render_template, current_app, requ
 from flask_login import login_required
 from app import db
 from app.models import Certificate, Place, ServiceGroup, User
+from app.utils.permissions import permission_required
 
 certificates_bp = Blueprint('certificates', __name__)
 
 @certificates_bp.route('/certificates', methods=['GET', 'POST'])
 @login_required
+@permission_required("certificates_page")
 def list_certificates():
     current_app.logger.info("Доступ к списку сертификатов")
     
@@ -86,8 +88,52 @@ def list_certificates():
 
             return redirect(url_for('certificates.list_certificates'))
 
-        # elif action == 'delete': # Добавьте, если реализуете удаление
-        #     pass
+        elif action == 'edit':
+            cert_id_str = request.form.get('cert_id')
+
+            if not cert_id_str:
+                flash('❌ Не выбран сертификат для редактирования.', 'danger')
+                return redirect(url_for('certificates.list_certificates'))
+
+            cert = db.session.get(Certificate, int(cert_id_str))
+
+            if not cert:
+                flash('❌ Сертификат не найден.', 'danger')
+                return redirect(url_for('certificates.list_certificates'))
+
+            try:
+                from datetime import datetime
+
+                issue_date_str = request.form.get('issue_date')
+                cert.issue_date = datetime.strptime(issue_date_str, '%Y-%m-%d').date() if issue_date_str else None
+
+                cert.reason = request.form.get('reason')
+                cert.series = request.form.get('series')
+                cert.number = request.form.get('number')
+                cert.total_amount = request.form.get('total_amount')
+                cert.note = request.form.get('note')
+
+                # --- ID связи ---
+                place_id_str = request.form.get('place_id')
+                servicegroup_id_str = request.form.get('servicegroup_id')
+                user_id_str = request.form.get('user_id')
+
+                cert.place_id = int(place_id_str) if place_id_str else None
+                cert.servicegroup_id = int(servicegroup_id_str) if servicegroup_id_str else None
+                cert.user_id = int(user_id_str) if user_id_str else None
+
+                db.session.commit()
+
+                current_app.logger.info(f"Обновлён сертификат ID={cert.id}")
+                flash('✅ Сертификат успешно обновлён!', 'success')
+
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"Ошибка обновления сертификата: {e}")
+                flash(f'❌ Ошибка обновления сертификата: {str(e)}', 'danger')
+
+            return redirect(url_for('certificates.list_certificates'))
+        
     # Получаем все сертификаты из базы данных
     certificates = db.session.execute(db.select(Certificate)).scalars().all()
     

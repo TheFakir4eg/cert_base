@@ -3,10 +3,17 @@
 
 {% block content %}
 <div class="container mt-5">    
-    <!-- Кнопка Certificates -->
+    <!-- Кнопка Сертификаты (Certificates) -->
     <div class="col-md-3 mb-3">
         <a href="{{ url_for('certificates.list_certificates') }}" class="btn btn-success d-block h-100">
-            Сертификаты (Certificates)
+            Сертификаты
+        </a>
+    </div>
+    <!-- Кнопка Отчеты  (Reports)-->
+    <div class="col-md-3 mb-3">
+        {#<a href="{{ url_for('certificates.list_reports') }}" class="btn btn-success d-block h-100">#}
+        <a class="btn btn-success d-block h-100">
+            Отчеты 
         </a>
     </div>
 

@@ -20,14 +20,16 @@
                     {{ current_user.name }}
                 </span>
                 <!-- Ссылка на настройки -->
-                <a class="btn btn-outline-light btn-sm me-2" href="{{ url_for('settings.settings') }}">Настройки</a>
+                {% if current_user.has_permission('settings_page') %}
+                    <a class="btn btn-outline-light btn-sm me-2" href="{{ url_for('settings.settings') }}">Настройки</a>
+                {% endif %}
                 <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.logout') }}">Выйти</a>
             </div>
             {% endif %}
         </div>
     </nav>
 
-    <div id="flash-container" class="position-fixed" style="top: 20%; left: 50%; transform: translate(-50%, -50%); z-index: 1050; max-width: 500px; width: 90%;">
+    <div id="flash-container" class="position-fixed" style="top: 5%; left: 50%; transform: translate(-50%, -50%); z-index: 1050; max-width: 500px; width: 90%;">
         <div id="flash-messages" class="d-flex flex-column gap-2">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}

@@ -1,0 +1,111 @@
+<!-- /app/templates/certificates/_cert_modal.html -->
+<div class="modal fade" id="{{ modal_id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ modal_title }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="POST">
+          <div class="modal-body">
+
+              <!-- действие create / edit -->
+              <input type="hidden" name="action" value="{{ action }}">
+              <input type="hidden" name="cert_id" value="{{ cert.id if cert else '' }}">
+
+              <div class="mb-3">
+                  <label class="form-label">Дата выдачи</label>
+                  <input type="date" class="form-control"
+                         name="issue_date"
+                         value="{{ cert.issue_date if cert else '' }}"
+                         >
+              </div>
+
+              <div class="mb-3">
+                  <label class="form-label">Причина</label>
+                  <input type="text" class="form-control"
+                         name="reason"
+                         value="{{ cert.reason if cert else '' }}">
+              </div>
+
+              <div class="mb-3">
+                  <label class="form-label">Серия *</label>
+                  <input type="text" class="form-control"
+                         name="series"
+                         value="{{ cert.series if cert else '' }}"
+                         required>
+              </div>
+
+              <div class="mb-3">
+                  <label class="form-label">Номер *</label>
+                  <input type="text" class="form-control"
+                         name="number"
+                         value="{{ cert.number if cert else '' }}"
+                         required>
+              </div>
+
+              <div class="mb-3">
+                  <label class="form-label">Номинал *</label>
+                  <input type="text" class="form-control"
+                         name="total_amount"
+                         value="{{ cert.total_amount if cert else '' }}"
+                         required>
+              </div>
+
+              <div class="mb-3">
+                  <label class="form-label">Место выдачи</label>
+                  <select class="form-select" name="place_id">
+                      <option value="">Не выбрано</option>
+                      {% for place in places %}
+                          <option value="{{ place.id }}"
+                            {% if cert and cert.place_id == place.id %}selected{% endif %}>
+                              {{ place.name }}
+                          </option>
+                      {% endfor %}
+                  </select>
+              </div>
+
+              <div class="mb-3">
+                  <label class="form-label">Группа услуг</label>
+                  <select class="form-select" name="servicegroup_id">
+                      <option value="">Не выбрано</option>
+                      {% for sg in servicegroups %}
+                          <option value="{{ sg.id }}"
+                            {% if cert and cert.servicegroup_id == sg.id %}selected{% endif %}>
+                              {{ sg.name }}
+                          </option>
+                      {% endfor %}
+                  </select>
+              </div>
+
+              <div class="mb-3">
+                  <label class="form-label">Создатель *</label>
+                  <select class="form-select" name="user_id" required>
+                      <option value="">Выберите...</option>
+                      {% for user in users %}
+                          <option value="{{ user.id }}"
+                            {% if cert and cert.user_id == user.id %}selected{% endif %}>
+                              {{ user.name }}
+                          </option>
+                      {% endfor %}
+                  </select>
+              </div>
+
+              <div class="mb-3">
+                  <label class="form-label">Комментарий</label>
+                  <input type="text" class="form-control"
+                         name="note"
+                         value="{{ cert.note if cert else '' }}">
+              </div>
+
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            <button type="submit" class="btn btn-primary">{{ submit_text }}</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>

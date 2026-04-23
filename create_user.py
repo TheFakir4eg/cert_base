@@ -11,13 +11,15 @@ app = create_app()
 with app.app_context():
     # Проверим, существует ли группа с id=1. Если нет - создадим.
     # Это нужно, потому что у User обязательный внешний ключ group_id.
-    group = db.session.execute(db.select(Group).filter_by(id=1)).scalar_one_or_none()
+    group = db.session.execute(
+        db.select(Group).filter_by(text="Default Group")
+    ).scalar_one_or_none()
     if not group:
-        print("Группа с id=1 не найдена. Создаём её.")
+        print("Группа Default Group не найдена. Создаём её.")
         group = Group(text="Default Group", note="Стандартная группа") # Измени текст по желанию
         db.session.add(group)
         db.session.flush() # flush() позволяет получить id новой группы до commit()
-        print(f"Создана группа с id={group.id}")
+        print(f"Создана группа {group.text}")
 
     # Создаём пользователя fakir
     existing_user = db.session.execute(db.select(User).filter_by(name='fakir')).scalar_one_or_none()

@@ -1,0 +1,73 @@
+<!-- app/templates/places/list.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Список клиентов</h2>
+
+    <!-- Кнопка для открытия модального окна -->
+    <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createClientModal">
+        Создать
+    </button>
+
+    <ul class="list-group">
+    {% for client in clients %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ client.name }} - {{ client.phone }} - {{ client.note }}
+            <!-- Форма удаления -->
+            <form method="POST" style="display:inline;" id="delete-form-{{ client.id }}">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="client_id" value="{{ client.id }}">
+                <!-- Добавляем id и onclick к кнопке -->
+                <button type="button"
+                        class="btn btn-danger btn-sm"
+                        title="Удалить {{ client.name }}"
+                        data-confirm="true"
+                        data-confirm-title="Удаление клиента"
+                        data-confirm-text="Вы уверены, что хотите удалить клиента «{{ client.name }}»?"
+                        data-confirm-form-id="delete-form-{{ client.id }}">
+                    ❌
+                </button>
+            </form>
+        </li>
+    {% else %}
+        <!-- Этот блок отображается, если список places пуст -->
+        <li class="list-group-item text-center text-muted">Список клиентов пуст.</li>
+    {% endfor %}
+    </ul>
+    <a href="{{ url_for('settings.settings') }}" class="btn btn-secondary mt-3">Назад</a>
+</div>
+
+<!-- Модальное окно для создания места -->
+<div class="modal fade" id="createClientModal" tabindex="-1" aria-labelledby="createClientModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createClientModalLabel">Создать клиента</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST">
+          <div class="modal-body">
+              <input type="hidden" name="action" value="create"> <!-- Скрытое поле действия -->
+              <div class="mb-3">
+                  <label for="name" class="form-label">Имя *</label>
+                  <input type="text" class="form-control" id="name" name="name" required>
+              </div>
+              <div class="mb-3">
+                  <label for="phone" class="form-label">№ телефона</label>
+                  <input type="text" class="form-control" id="phone" name="phone">
+              </div>
+              <div class="mb-3">
+                  <label for="note" class="form-label">Комментарий</label>
+                  <input type="text" class="form-control" id="note" name="note">
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            <button type="submit" class="btn btn-primary">Создать</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{
+  "sections": [
+    {
+      "section": "settings",
+      "title": "Настройки",
+      "permissions": [
+        {
+          "name": "settings_page",
+          "description": "Доступ к странице настроек"
+        }
+      ]
+    },
+
+    {
+      "section": "places",
+      "title": "Места выдачи",
+      "permissions": [
+        {
+          "name": "places_page",
+          "description": "Доступ к странице"
+        },
+        {
+          "name": "places_add",
+          "description": "Кнопка Добавить"
+        },
+        {
+          "name": "places_edit",
+          "description": "Кнопка Редактировать"
+        },
+        {
+          "name": "places_delete",
+          "description": "Кнопка Удалить"
+        }
+      ]
+    },
+
+    {
+      "section": "users",
+      "title": "Пользователи",
+      "permissions": [
+        { "name": "users_page", "description": "Доступ к странице" },
+        { "name": "users_add", "description": "Добавление пользователя" },
+        { "name": "users_edit", "description": "Редактирование пользователя" },
+        { "name": "users_delete", "description": "Удаление пользователя" }
+      ]
+    },
+
+    {
+      "section": "groups",
+      "title": "Группы пользователей",
+      "permissions": [
+        { "name": "groups_page", "description": "Доступ к странице" },
+        { "name": "groups_add", "description": "Создание группы" },
+        { "name": "groups_edit", "description": "Редактирование группы" },
+        { "name": "groups_delete", "description": "Удаление группы" }
+      ]
+    },
+
+    {
+      "section": "servicegroups",
+      "title": "Группы услуг",
+      "permissions": [
+        { "name": "servicegroups_page", "description": "Доступ к странице" },
+        { "name": "servicegroups_add", "description": "Создание группы услуг" },
+        { "name": "servicegroups_edit", "description": "Редактирование группы услуг" },
+        { "name": "servicegroups_delete", "description": "Удаление группы услуг" }
+      ]
+    },
+
+    {
+      "section": "certificates",
+      "title": "Сертификаты",
+      "permissions": [
+        { "name": "certificates_page", "description": "Доступ к странице сертификатов" }
+      ]
+    },
+
+    {
+      "section": "clients",
+      "title": "Клиенты",
+      "permissions": [
+        { "name": "clients_page", "description": "Доступ к странице клиентов" }
+      ]
+    }
+  ]
+}

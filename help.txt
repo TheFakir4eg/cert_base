@@ -10,3 +10,9 @@ db.session.flush() -  позволяет получить id новой груп
     Заполняет универсальное модальное окно этими данными.
     При нажатии на кнопку "Да" в модальном окне, JavaScript получает ссылку на форму (по id) и вызывает form.submit(), что отправляет POST-запрос на сервер.
     Маршрут places_routes.py обрабатывает запрос
+
+Ошибка активации venv окружения: 
+    Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+
+python -m venv venv
+venv\Scripts\activate

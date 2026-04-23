@@ -4,10 +4,55 @@
 {% block content %}
 <div class="container mt-5">
     <h2>Список сертификатов</h2>
-    <!-- Кнопка для открытия модального окна -->
-        <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createCertModal">
-            Создать
+        <!-- Кнопка для открытия модального окна создания сертификата-->
+        <button type="button"
+                class="btn btn-primary mb-3"
+                id="createCertBtn"
+                data-bs-toggle="modal"
+                data-bs-target="#createCertModal">
+            Создание
         </button>
+        <button type="button"
+                class="btn btn-warning mb-3"
+                id="editCertBtn"
+                disabled>
+            Изменение
+        </button>
+        <button type="button" 
+                class="btn btn-primary mb-3" 
+                id = "issuingCertBtn"
+                disabled>
+            Выдача
+        </button>
+        <button type="button" 
+                class="btn btn-primary mb-3" 
+                id = "usingCertBtn"
+                disabled>
+            Использование
+        </button>
+        <button type="button" 
+                class="btn btn-primary mb-3" 
+                id = "closingCertBtn"
+                disabled>
+            Вывод
+        </button>
+        <ul class="nav nav-tabs mb-3" id="certFilterTabs">
+            <li class="nav-item">
+                <button class="nav-link active filter-btn" data-filter="all">
+                    Все
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link filter-btn" data-filter="issued">
+                    Выпущены
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link filter-btn" data-filter="zero">
+                    Нулевые
+                </button>
+            </li>
+        </ul>
         <!-- Таблица сертификатов -->
         <div class="table-responsive">
             <table class="table table-striped table-hover">
@@ -29,20 +74,38 @@
                 </thead>
                 <tbody>
                     {% for cert in certificates %}
-                    <tr>
-                        <th scope="row">{{ loop.index }}</th> <!-- Номер строки -->
-                        <td>{{ cert.series }}</td>
-                        <td>{{ cert.number }}</td>
-                        <td>{{ cert.issue_date.strftime('%d.%m.%Y') if cert.issue_date else '' }}</td>
-                        <td>{{ cert.reason or '' }}</td> <!-- Проверка на None -->
-                        <td>{{ cert.total_amount }}</td>
-                        <td>{{ cert.expired_amount }}</td>
-                        <td>{{ cert.place.name if cert.place else 'Не указано' }}</td> <!-- Отображение связанного места -->
-                        <td>{{ cert.servicegroup.name if cert.servicegroup else 'Не указано' }}</td> <!-- Отображение связанной группы услуг -->
-                        <td>{{ cert.user.name }}</td> <!-- Отображение связанного пользователя -->
-                        <td>{{ cert.note or '' }}</td> <!-- Проверка на None -->
-                        <!-- Добавьте другие ячейки по необходимости -->
-                    </tr>
+                        <tr class="cert-row"
+                            data-id="{{ cert.id }}"
+                            data-series="{{ cert.series }}"
+                            data-number="{{ cert.number }}"
+                            data-issue-date="{{ cert.issue_date.strftime('%Y-%m-%d') if cert.issue_date else '' }}"
+                            data-reason="{{ cert.reason or '' }}"
+                            data-total-amount="{{ cert.total_amount }}"
+
+                            data-place-id="{{ cert.place.id if cert.place else '' }}"
+                            data-place-name="{{ cert.place.name if cert.place else '' }}"
+
+                            data-servicegroup-id="{{ cert.servicegroup.id if cert.servicegroup else '' }}"
+                            data-servicegroup-name="{{ cert.servicegroup.name if cert.servicegroup else '' }}"
+
+                            data-user-id="{{ cert.user.id }}"
+                            data-user-name="{{ cert.user.name }}"
+
+                            data-note="{{ cert.note or '' }}"
+                        >
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ cert.series }}</td>
+                            <td>{{ cert.number }}</td>
+                            <td>{{ cert.issue_date.strftime('%d.%m.%Y') if cert.issue_date else '' }}</td>
+                            <td>{{ cert.reason or '' }}</td>
+                            <td>{{ cert.total_amount }}</td>
+                            <td>{{ cert.expired_amount }}</td>
+                            <td>{{ cert.place.name if cert.place else 'Не указано' }}</td>
+                            <td>{{ cert.servicegroup.name if cert.servicegroup else 'Не указано' }}</td>
+                            <td>{{ cert.user.name }}</td>
+                            <td>{{ cert.note or '' }}</td>
+                        </tr>
+                       
                     {% else %}
                     <!-- Этот блок отображается, если список certificates пуст -->
                     <tr>
@@ -54,75 +117,23 @@
         </div>
     <a href="{{ url_for('auth.index') }}" class="btn btn-secondary mt-3">Назад</a>
 </div>
-<!-- Модальное окно для создания места -->
-<div class="modal fade" id="createCertModal" tabindex="-1" aria-labelledby="createCertModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="createCertModalLabel">Создать новый сертификат</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <form method="POST">
-          <div class="modal-body">
-              <input type="hidden" name="action" value="create"> <!-- Скрытое поле действия -->
-              <div class="mb-3">
-                  <label for="issue_date" class="form-label">Дата выдачи *</label>
-                  <input type="date" class="form-control" id="issue_date" name="issue_date" required>
-              </div>
-              <div class="mb-3">
-                  <label for="reason" class="form-label">Причина</label>
-                  <input type="text" class="form-control" id="reason" name="reason">
-              </div>
-              <div class="mb-3">
-                  <label for="series" class="form-label">Серия *</label>
-                  <input type="text" class="form-control" id="series" name="series" required>
-              </div>
-              <div class="mb-3">
-                  <label for="number" class="form-label">Номер *</label>
-                  <input type="text" class="form-control" id="number" name="number" required>
-              </div>
-              <div class="mb-3">
-                  <label for="total_amount" class="form-label">Номинал *</label>
-                  <input type="text" class="form-control" id="total_amount" name="total_amount" required>
-              </div>
-              <div class="mb-3">
-                  <label for="place_id" class="form-label">Место выдачи</label>
-                  <select class="form-select" id="place_id" name="place_id">
-                      <option value="">Не выбрано</option>
-                      {% for place in places %}
-                          <option value="{{ place.id }}">{{ place.name }}</option>
-                      {% endfor %}
-                  </select>
-              </div>
-              <div class="mb-3">
-                  <label for="servicegroup_id" class="form-label">Группа услуг</label>
-                  <select class="form-select" id="servicegroup_id" name="servicegroup_id">
-                      <option value="">Не выбрано</option>
-                      {% for servicegroup in servicegroups %}
-                          <option value="{{ servicegroup.id }}">{{ servicegroup.name }}</option>
-                      {% endfor %}
-                  </select>
-              </div>
-              <div class="mb-3">
-                  <label for="user_id" class="form-label">Создатель *</label>
-                  <select class="form-select" id="user_id" name="user_id" required> <!-- Сделаем обязательным -->
-                      <option value="">Выберите создателя...</option>
-                      {% for user in users %}
-                          <option value="{{ user.id }}">{{ user.name }}</option>
-                      {% endfor %}
-                  </select>
-              </div>
-              <div class="mb-3">
-                  <label for="note" class="form-label">Комментарий</label>
-                  <input type="text" class="form-control" id="note" name="note">
-              </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-            <button type="submit" class="btn btn-primary">Создать</button>
-          </div>
-      </form>
-    </div>
-  </div>
-</div>
+<!-- Модальное окно для создания сертификата -->
+    {% set modal_id = "createCertModal" %}
+    {% set modal_title = "Создать сертификат" %}
+    {% set action = "create" %}
+    {% set submit_text = "Создать" %}
+    {% set cert = None %}
+    {% include "certificates/_cert_modal.html" %}
+    <!-- Модальное окно для редактирования сертификата -->    
+    {% set modal_id = "editCertModal" %}
+    {% set modal_title = "Редактировать сертификат" %}
+    {% set action = "edit" %}
+    {% set submit_text = "Сохранить" %}
+    {% set cert = None %}
+    {% include "certificates/_cert_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+    <!-- Подключаем JS файл -->
+    <script src="{{ url_for('static', filename='js/certModalWindow.js') }}"></script>
 {% endblock %}

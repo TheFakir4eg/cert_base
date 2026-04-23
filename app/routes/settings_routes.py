@@ -2,7 +2,9 @@
 from flask import Blueprint, flash, redirect, render_template, current_app, request, url_for
 from flask_login import login_required
 from app import db
-from app.models import Certificate, Group, Permission, Resource, ServiceGroup, User
+from app.models import Certificate, Group, ServiceGroup, User
+from app.utils.permissions import permission_required
+
 
 settings_bp = Blueprint('settings', __name__)
 
@@ -16,6 +18,7 @@ def list_groups():
 
 @settings_bp.route('/settings')
 @login_required
+@permission_required("settings_page") 
 def settings():
     current_app.logger.info("Доступ к странице Настройки")
     return render_template('settings/settings.html')
@@ -97,91 +100,6 @@ def servicegroup():
     # Получаем все места из базы данных
     servicegroups = db.session.execute(db.select(ServiceGroup)).scalars().all()
     return render_template('settings/servicegroup.html', servicegroups = servicegroups)
-
-@settings_bp.route('/group_permissions/<int:group_id>', methods=['GET', 'POST'])
-@login_required
-#@permission_required('groups_management', 'can_edit') # Требуется право на редактирование групп/разрешений
-def group_permissions(group_id):
-    current_app.logger.info(f"Доступ к редактированию разрешений для группы ID: {group_id}")
-
-    # Найдём группу
-    group = db.session.get(Group, group_id)
-    if not group:
-        flash(f'❌ Группа с ID {group_id} не найдена.', 'danger')
-        return redirect(url_for('groups'))
-
-    # Получаем всех пользователей, которые принадлежат этой группе
-    users_in_group = db.session.execute(
-        db.select(User).filter_by(group_id=group.id)
-    ).scalars().all()
-    
-    if request.method == 'POST':
-        # Обработка формы обновления разрешений
-        # Получаем все ресурсы
-        resources = db.session.execute(db.select(Resource)).scalars().all()
-
-        for resource in resources:
-            # Получаем значения из формы для текущего ресурса
-            can_view = request.form.get(f'resource_{resource.id}_can_view') == 'on'
-            can_add = request.form.get(f'resource_{resource.id}_can_add') == 'on'
-            can_edit = request.form.get(f'resource_{resource.id}_can_edit') == 'on'
-            can_delete = request.form.get(f'resource_{resource.id}_can_delete') == 'on'
-
-            # Проверяем, существует ли уже запись разрешений для этой группы и ресурса
-            permission = db.session.execute(
-                db.select(Permission).filter_by(group_id=group.id, resource_id=resource.id)
-            ).scalar_one_or_none()
-
-            if permission:
-                # Обновляем существующую запись
-                permission.can_view = can_view
-                permission.can_add = can_add
-                permission.can_edit = can_edit
-                permission.can_delete = can_delete
-            else:
-                # Создаём новую запись разрешений, если не существует
-                # и если хотя бы одно разрешение установлено
-                if can_view or can_add or can_edit or can_delete:
-                    new_permission = Permission(
-                        group_id=group.id,
-                        resource_id=resource.id,
-                        can_view=can_view,
-                        can_add=can_add,
-                        can_edit=can_edit,
-                        can_delete=can_delete
-                    )
-                    db.session.add(new_permission)
-
-        try:
-            db.session.commit()
-            current_app.logger.info(f"Разрешения для группы '{group.text}' (ID: {group.id}) обновлены.")
-            flash(f'✅ Разрешения для группы "{group.text}" успешно обновлены!', 'success')
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Ошибка при обновлении разрешений для группы {group.id}: {e}")
-            flash(f'❌ Ошибка при обновлении разрешений: {str(e)}', 'danger')
-
-        # После сохранения возвращаемся на страницу редактирования этой же группы
-        return redirect(url_for('settings.group_permissions', group_id=group_id))
-
-
-    # GET-запрос: отображаем форму
-    resources = db.session.execute(db.select(Resource)).scalars().all()
-    permissions_dict = {}
-    permissions = db.session.execute(
-        db.select(Permission).filter_by(group_id=group.id)
-    ).scalars().all()
-
-    for perm in permissions:
-        permissions_dict[perm.resource_id] = perm
-
-    return render_template(
-        'settings/group_permissions.html',
-        group=group,
-        resources=resources,
-        permissions_dict=permissions_dict,
-        users_in_group=users_in_group # Передаём список пользователей в шаблон
-    )
     
 @settings_bp.route('/create_group', methods=['GET', 'POST'])
 @login_required
@@ -205,3 +123,20 @@ def create_group():
         else:
             flash('⚠️ Пожалуйста, введите название группы.', 'warning')
     return render_template('settings/group_permissions.html')
+
+@settings_bp.route("/api/groups/<int:group_id>/users")
+def get_group_users(group_id):
+    from app.models import User, Group
+    from app import db
+
+    group = Group.query.get_or_404(group_id)
+
+    users = User.query.filter_by(group_id=group_id).all()
+
+    return {
+        "group": {
+            "id": group.id,
+            "text": group.text
+        },
+        "users": [u.id for u in users]  
+    }
