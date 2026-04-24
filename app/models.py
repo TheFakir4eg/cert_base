@@ -1,4 +1,5 @@
 # app/models.py
+
 from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -20,23 +21,45 @@ class Certificate(db.Model): # Модель для таблицы certificates
     __tablename__ = 'certificates'
 
     id = db.Column(db.Integer, primary_key=True)
-    issue_date = db.Column(db.Date) # Дата выдачи сертификата
-    reason = db.Column(db.String(20), nullable=True) # Причина выдачи сертификата
+    # создание сертификата
+    create_date = db.Column(db.DateTime, default=lambda: datetime.now()) # Дата создания. Записывается в бд автоматически. 
+    reason = db.Column(db.String(20), nullable=True) # Причина создания сертификата
     series = db.Column(db.String(20), nullable=False) # серия сертификата 
     number = db.Column(db.String(20), nullable=False) # номер сертификата
-    total_amount = db.Column(db.String(20), nullable=False) # номинал сертификата
-    place_id = db.Column(db.Integer, db.ForeignKey('places.id'), nullable=True) # Внешний ключ, место выдачи сетрификата
+    total_amount = db.Column(db.String(20), nullable=False) # номинал сертификата !!! Исправить на Integer
+    place_id = db.Column(db.Integer, db.ForeignKey('places.id'), nullable=True) # Внешний ключ, место создания сетрификата
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) # Внешний ключ, пользователь, создавший сертификат
     servicegroup_id = db.Column(db.Integer, db.ForeignKey('servicegroup.id'), nullable=True) # Внешний ключ, группа услуг
+    # выдача клиенту
+    issue_date = db.Column(db.Date) # Дата выдачи сертификата клиенту
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=True) # Внешний ключ, держатель сертификата (клиент, которому его выдали)
-    create_date = db.Column(db.DateTime, default=lambda: datetime.now())
-    expired_amount = db.Column(db.String(20), nullable=False) # остаток сертификата, изначально равен номиналу
+    #редактирование
+    edit_date = db.Column(db.DateTime, default=lambda: datetime.now(), onupdate=datetime.now()) # Дата изменения. Записывается в бд автоматически. 
+    edit_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Внешний ключ, пользователь, изменивший сертификат. Может отличаться от создателя
+    #=====
+    expired_amount = db.Column(db.String(20), nullable=False) # остаток сертификата, изначально равен номиналу. !!! Исправить на Integer(string нельзя складывать)
     note = db.Column(db.String(100), nullable=True)
     
     # Отношения между таблицами
-    user = db.relationship('User', backref='certificates')    
-    servicegroup = db.relationship('ServiceGroup', backref='certificates')
-    clients = db.relationship('Client', backref='certificates')
+    
+    # кто создал сертификат
+    creator = db.relationship(
+        'User',
+        foreign_keys=[user_id],
+        backref='created_certificates'
+    )
+    # кто редактировал сертификат
+    editor = db.relationship(
+        'User',
+        foreign_keys=[edit_user_id],
+        backref='edited_certificates'
+    )
+    # клиент (кому выдали)
+    #client = db.relationship('Client')
+    # место выдачи
+    #place = db.relationship('Place')
+    # группа услуг
+    #servicegroup = db.relationship('ServiceGroup')
     
     def __repr__(self):
         return f'<Certificate {self.number}>'
@@ -178,6 +201,9 @@ class ServiceGroup(db.Model):
     name = db.Column(db.String(20), nullable=False)
     note = db.Column(db.String(100), nullable=True)
     
+    # Отношения
+    certificates = db.relationship('Certificate', backref='servicegroup', lazy=True) 
+    
 class Client(db.Model):
     """Клиенты. Люди, которым выданы сетрификаты
 
@@ -189,3 +215,5 @@ class Client(db.Model):
     name = db.Column(db.String(50), nullable=False)
     phone = db.Column(db.String(12), nullable=True)
     note = db.Column(db.String(100), nullable=True)
+    
+    certificates = db.relationship('Certificate', backref='client', lazy=True)

@@ -20,4 +20,19 @@ venv\Scripts\activate
 git reset --hard origin/master
 git clean -fd
 
+docker compose build --no-cache
+docker compose up -d
+
  (tree /F) -notmatch "__pycache__" | Out-File -FilePath .\filtered_tree.txt
+
+ как попасть в бд внутри docker 
+    Сначала узнаём имя контейнера БД
+        docker ps
+    Подключаемся к MySQL(в нашем случае mariadb) внутри контейнера
+        docker exec -it cert_base_db mariadb -u fakir -p
+    Смотрим базы
+        SHOW DATABASES;
+    Выбираем нужную:
+        USE cert_db;
+    Смотрим пользователей
+         SELECT id, login  FROM users; 

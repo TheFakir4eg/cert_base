@@ -15,14 +15,6 @@
               <input type="hidden" name="cert_id" value="{{ cert.id if cert else '' }}">
 
               <div class="mb-3">
-                  <label class="form-label">Дата выдачи</label>
-                  <input type="date" class="form-control"
-                         name="issue_date"
-                         value="{{ cert.issue_date if cert else '' }}"
-                         >
-              </div>
-
-              <div class="mb-3">
                   <label class="form-label">Причина</label>
                   <input type="text" class="form-control"
                          name="reason"
@@ -54,19 +46,6 @@
               </div>
 
               <div class="mb-3">
-                  <label class="form-label">Место выдачи</label>
-                  <select class="form-select" name="place_id">
-                      <option value="">Не выбрано</option>
-                      {% for place in places %}
-                          <option value="{{ place.id }}"
-                            {% if cert and cert.place_id == place.id %}selected{% endif %}>
-                              {{ place.name }}
-                          </option>
-                      {% endfor %}
-                  </select>
-              </div>
-
-              <div class="mb-3">
                   <label class="form-label">Группа услуг</label>
                   <select class="form-select" name="servicegroup_id">
                       <option value="">Не выбрано</option>
@@ -74,19 +53,6 @@
                           <option value="{{ sg.id }}"
                             {% if cert and cert.servicegroup_id == sg.id %}selected{% endif %}>
                               {{ sg.name }}
-                          </option>
-                      {% endfor %}
-                  </select>
-              </div>
-
-              <div class="mb-3">
-                  <label class="form-label">Создатель *</label>
-                  <select class="form-select" name="user_id" required>
-                      <option value="">Выберите...</option>
-                      {% for user in users %}
-                          <option value="{{ user.id }}"
-                            {% if cert and cert.user_id == user.id %}selected{% endif %}>
-                              {{ user.name }}
                           </option>
                       {% endfor %}
                   </select>

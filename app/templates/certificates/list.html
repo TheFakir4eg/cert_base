@@ -61,13 +61,16 @@
                         <th scope="col">#</th> <!-- Колонка с номером строки -->
                         <th scope="col">Серия</th>
                         <th scope="col">Номер</th>
+                        <th scope="col">Дата создания</th>
                         <th scope="col">Дата выдачи</th>
                         <th scope="col">Причина</th>
+                        <th scope="col">Клиент</th>
                         <th scope="col">Номинал</th>
                         <th scope="col">Остаток</th>
                         <th scope="col">Место выдачи</th>
                         <th scope="col">Группа услуг</th>
-                        <th scope="col">Создатель</th>
+                        <th scope="col">Создал</th>
+                        <th scope="col">Изменил</th>
                         <th scope="col">Примечание</th>
                         <!-- Добавьте другие колонки по необходимости -->
                     </tr>
@@ -78,31 +81,39 @@
                             data-id="{{ cert.id }}"
                             data-series="{{ cert.series }}"
                             data-number="{{ cert.number }}"
+                            data-create-date="{{ cert.create_date.strftime('%Y-%m-%d') if cert.create_date else '' }}"
                             data-issue-date="{{ cert.issue_date.strftime('%Y-%m-%d') if cert.issue_date else '' }}"
                             data-reason="{{ cert.reason or '' }}"
+                            data-client-id="{{ cert.client.id or '' }}"
+                            data-client-name="{{ cert.client.name or '' }}"
                             data-total-amount="{{ cert.total_amount }}"
-
                             data-place-id="{{ cert.place.id if cert.place else '' }}"
                             data-place-name="{{ cert.place.name if cert.place else '' }}"
 
                             data-servicegroup-id="{{ cert.servicegroup.id if cert.servicegroup else '' }}"
                             data-servicegroup-name="{{ cert.servicegroup.name if cert.servicegroup else '' }}"
 
-                            data-user-id="{{ cert.user.id }}"
-                            data-user-name="{{ cert.user.name }}"
+                            data-user-id="{{ cert.creator.id }}"
+                            data-user-name="{{ cert.creator.name }}"
+
+                            data-user-id="{{ cert.editor.id }}"
+                            data-user-name="{{ cert.editor.name }}"
 
                             data-note="{{ cert.note or '' }}"
                         >
                             <th scope="row">{{ loop.index }}</th>
                             <td>{{ cert.series }}</td>
                             <td>{{ cert.number }}</td>
+                            <td>{{ cert.create_date.strftime('%d.%m.%Y') if cert.create_date else '' }}</td>
                             <td>{{ cert.issue_date.strftime('%d.%m.%Y') if cert.issue_date else '' }}</td>
                             <td>{{ cert.reason or '' }}</td>
+                            <td>{{ cert.client.name or '' }}</td>
                             <td>{{ cert.total_amount }}</td>
                             <td>{{ cert.expired_amount }}</td>
                             <td>{{ cert.place.name if cert.place else 'Не указано' }}</td>
                             <td>{{ cert.servicegroup.name if cert.servicegroup else 'Не указано' }}</td>
-                            <td>{{ cert.user.name }}</td>
+                            <td>{{ cert.creator.name }}</td>
+                            <td>{{ cert.editor.name }}</td>
                             <td>{{ cert.note or '' }}</td>
                         </tr>
                        
@@ -131,6 +142,8 @@
     {% set submit_text = "Сохранить" %}
     {% set cert = None %}
     {% include "certificates/_cert_modal.html" %}
+    <!-- Модальное окно для выдачи сертификата --> 
+    {% include "certificates/_issue_modal.html" %}
 {% endblock %}
 
 {% block scripts %}
