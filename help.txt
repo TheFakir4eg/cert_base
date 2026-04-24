@@ -16,3 +16,8 @@ db.session.flush() -  позволяет получить id новой груп
 
 python -m venv venv
 venv\Scripts\activate
+
+git reset --hard origin/master
+git clean -fd
+
+ (tree /F) -notmatch "__pycache__" | Out-File -FilePath .\filtered_tree.txt

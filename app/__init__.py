@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from dotenv import load_dotenv
-from config import Config
+from .config import Config
 import os
 
 load_dotenv() # Загружаем переменные из .env
