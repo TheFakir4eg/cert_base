@@ -6,6 +6,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from app.utils.permission_registry import permission_exists
 from sqlalchemy.orm import validates
+from sqlalchemy import Numeric, func
+from decimal import Decimal
 
 class Certificate(db.Model): # Модель для таблицы certificates
     """Сертификаты
@@ -26,7 +28,7 @@ class Certificate(db.Model): # Модель для таблицы certificates
     reason = db.Column(db.String(20), nullable=True) # Причина создания сертификата
     series = db.Column(db.String(20), nullable=False) # серия сертификата 
     number = db.Column(db.String(20), nullable=False) # номер сертификата
-    total_amount = db.Column(db.String(20), nullable=False) # номинал сертификата !!! Исправить на Integer
+
     place_id = db.Column(db.Integer, db.ForeignKey('places.id'), nullable=True) # Внешний ключ, место создания сетрификата
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) # Внешний ключ, пользователь, создавший сертификат
     servicegroup_id = db.Column(db.Integer, db.ForeignKey('servicegroup.id'), nullable=True) # Внешний ключ, группа услуг
@@ -36,10 +38,14 @@ class Certificate(db.Model): # Модель для таблицы certificates
     #редактирование
     edit_date = db.Column(db.DateTime, default=lambda: datetime.now(), onupdate=datetime.now()) # Дата изменения. Записывается в бд автоматически. 
     edit_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Внешний ключ, пользователь, изменивший сертификат. Может отличаться от создателя
-    #=====
-    expired_amount = db.Column(db.String(20), nullable=False) # остаток сертификата, изначально равен номиналу. !!! Исправить на Integer(string нельзя складывать)
+    # финансы
+    #total_amount = db.Column(db.String(20), nullable=False) # номинал сертификата !!! Исправить на Integer
+    total_amount = db.Column(Numeric(10,2), nullable=False)
+    #expired_amount = db.Column(db.String(20), nullable=False) # остаток сертификата, изначально равен номиналу. !!! Исправить на Integer(string нельзя складывать)
+    # expired_amount = db.Column(Numeric(10,2), nullable=False)
     note = db.Column(db.String(100), nullable=True)
-    
+    # показатель активности (для вывода из оборота)
+    active = db.Column(db.Boolean, default=True, nullable=False)
     # Отношения между таблицами
     
     # кто создал сертификат
@@ -54,12 +60,25 @@ class Certificate(db.Model): # Модель для таблицы certificates
         foreign_keys=[edit_user_id],
         backref='edited_certificates'
     )
-    # клиент (кому выдали)
-    #client = db.relationship('Client')
-    # место выдачи
-    #place = db.relationship('Place')
-    # группа услуг
-    #servicegroup = db.relationship('ServiceGroup')
+
+    # сумма списаний
+    # !!! потенциально опасное место
+    # при большом количестве сертификатов есть риск замедления работы
+    @property
+    def used_amount(self):
+        result = db.session.query(
+            func.coalesce(func.sum(CertificateUsage.amount), 0)
+        ).filter(
+            CertificateUsage.certificate_id == self.id
+        ).scalar()
+        
+        return Decimal(result)
+        #return result
+    
+    # баланс
+    @property
+    def balance(self):
+        return self.total_amount - self.used_amount
     
     def __repr__(self):
         return f'<Certificate {self.number}>'
@@ -217,3 +236,37 @@ class Client(db.Model):
     note = db.Column(db.String(100), nullable=True)
     
     certificates = db.relationship('Certificate', backref='client', lazy=True)
+    
+class CertificateUsage(db.Model):
+    """Операции списания средств с сертификата"""
+    __tablename__ = "certificate_usages"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    certificate_id = db.Column(
+        db.Integer,
+        db.ForeignKey("certificates.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    amount = db.Column(Numeric(10,2), nullable=False)  # сумма списания
+    comment = db.Column(db.String(255), nullable=True)
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(),
+        nullable=False
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False
+    )
+
+    # связи
+    certificate = db.relationship("Certificate", backref="usages")
+    user = db.relationship("User")
+
+    def __repr__(self):
+        return f"<CertificateUsage cert={self.certificate_id} amount={self.amount}>"

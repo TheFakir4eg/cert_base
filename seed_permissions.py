@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from app import create_app, db
 from app.models import Group, GroupPermission
 from app.utils.permission_registry import get_all_permissions
@@ -23,15 +26,20 @@ with app.app_context():
     print(f"Назначаем ВСЕ права группе: {admin_group.text}")
 
     # очищаем старые записи (если были попытки)
-    GroupPermission.query.delete()
+    #GroupPermission.query.delete()
+    existing = {
+        (gp.group_id, gp.permission_name)
+        for gp in GroupPermission.query.all()
+    }
 
     for perm in all_permissions:
-        db.session.add(
-            GroupPermission(
-                group_id=admin_group.id,
-                permission_name=perm
+        if (admin_group.id, perm) not in existing:
+            db.session.add(
+                GroupPermission(
+                    group_id=admin_group.id,
+                    permission_name=perm
+                )
             )
-        )
 
     db.session.commit()
 

@@ -1,0 +1,40 @@
+<div class="modal fade" id="spendCertModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <form id="spendCertForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Списание сертификата</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+
+          <input type="hidden" id="spend_cert_id">
+
+          <div class="mb-3">
+            <label class="form-label">Текущий баланс</label>
+            <input type="text" id="spend_balance" class="form-control" disabled>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Сумма списания</label>
+            <input type="number" id="spend_amount" class="form-control" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Комментарий</label>
+            <textarea id="spend_comment" class="form-control"></textarea>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-danger">Списать</button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>

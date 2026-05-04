@@ -33,6 +33,9 @@ def create_app():
     # app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Рекомендуется отключить
     # app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here') # Установите SECRET_KEY
+    app.config["JSON_AS_ASCII"] = False
+    app.json.ensure_ascii = False
+    
     app.config.from_object(Config)
 
     # Настройка LoginManager

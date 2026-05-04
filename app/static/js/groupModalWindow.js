@@ -218,15 +218,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 const checked = selectedPermissions.has(perm.name) ? "checked" : "";
 
+                // ⭐ новый правильный текст permission
+                const labelText = perm.description || perm.title || perm.name;
+
                 html += `
                     <div class="form-check">
                         <input class="form-check-input permission-checkbox"
-                               type="checkbox"
-                               value="${perm.name}"
-                               id="perm_${perm.name}"
-                               ${checked}>
+                            type="checkbox"
+                            value="${perm.name}"
+                            id="perm_${perm.name}"
+                            ${checked}>
                         <label class="form-check-label" for="perm_${perm.name}">
-                            ${perm.title ?? perm.name}
+                            ${labelText}
                         </label>
                     </div>
                 `;

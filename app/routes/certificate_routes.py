@@ -1,11 +1,12 @@
 # app/routes/certificates_routes.py
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, current_app, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, current_app, request, url_for
 from flask_login import login_required,current_user
 from app import db
-from app.models import Certificate, Client, Place, ServiceGroup, User
+from app.models import Certificate, CertificateUsage, Client, Place, ServiceGroup, User
 from app.utils.permissions import permission_required
+from app.services.certificate_service import get_certificate_usages, spend_certificate
 
 certificates_bp = Blueprint('certificates', __name__)
 
@@ -48,7 +49,7 @@ def list_certificates():
                         total_amount=total_amount,
                         servicegroup_id=servicegroup_id,
                         user_id=user_id, # ID пользователя-создателя (обязательно)
-                        expired_amount=total_amount, # Изначально остаток равен номиналу
+                        
                         note=note
                     )
 
@@ -112,6 +113,9 @@ def list_certificates():
         
     # Получаем все сертификаты из базы данных
     certificates = db.session.execute(db.select(Certificate)).scalars().all()
+    # certificates = db.session.execute(
+    #     db.select(Certificate).where(Certificate.active == True)
+    # ).scalars().all()
     
     # GET-запрос или POST с другим действием: отображаем список
     # Получаем списки 
@@ -146,3 +150,113 @@ def issue_certificate():
     db.session.commit()
 
     return {"status": "ok"}
+
+# @certificates_bp.route("/certificates/use", methods=["POST"])
+# @login_required
+# def use_certificate_route():
+#     data = request.get_json()
+
+#     try:
+#         use_certificate(
+#             certificate_id=int(data["cert_id"]),
+#             amount=float(data["amount"]),
+#             user_id=current_user.id,
+#             comment=data.get("comment")
+#         )
+
+#         return {"status": "ok"}
+
+#     except CertificateError as e:
+#         return {"error": str(e)}, 400
+
+@certificates_bp.route("/certificates/<int:certificate_id>/spend", methods=["POST"])
+@login_required
+def spend_certificate_route(certificate_id):
+    data = request.get_json()
+
+    amount = data.get("amount")
+    comment = data.get("comment")
+
+    try:
+        usage = spend_certificate(
+            certificate_id=certificate_id,
+            amount=amount,
+            user_id=current_user.id,
+            comment=comment
+        )
+
+        return jsonify({
+            "success": True,
+            "message": "Средства успешно списаны"
+        })
+
+    except ValueError as e:
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 400
+        
+# @certificates_bp.route("/certificates/<int:certificate_id>/usages", methods=["GET"])
+# @login_required
+# def certificate_usages_route(certificate_id):
+#     usages = get_certificate_usages(certificate_id)
+#     return jsonify(usages)
+
+@certificates_bp.route("/certificates/<int:certificate_id>/usages", methods=["GET"])
+@login_required
+def get_certificate_usages(certificate_id):
+
+    certificate = Certificate.query.get_or_404(certificate_id)
+
+    usages = (
+        CertificateUsage.query
+        .filter_by(certificate_id=certificate_id)
+        .order_by(CertificateUsage.created_at.desc())
+        .all()
+    )
+
+    result = []
+    for u in usages:
+        result.append({
+            "amount": float(u.amount),
+            "comment": u.comment or "",
+            "date": u.created_at.strftime("%d.%m.%Y %H:%M"),
+            "user": u.user.name
+        })
+
+    return jsonify(result)
+
+@certificates_bp.route("/certificates/<int:certificate_id>/close", methods=["POST"])
+@login_required
+def close_certificate(certificate_id):
+
+    cert = db.session.get(Certificate, certificate_id)
+
+    if not cert:
+        return jsonify({"error": "Not found"}), 404
+
+    if cert.balance > 0:
+        return jsonify({"error": "Нельзя закрыть сертификат с остатком"}), 400
+
+    cert.active = False
+    cert.edit_user_id = current_user.id
+
+    db.session.commit()
+
+    return jsonify({"success": True})
+
+@certificates_bp.route("/certificates/<int:certificate_id>/restore", methods=["POST"])
+@login_required
+def restore_certificate(certificate_id):
+
+    cert = db.session.get(Certificate, certificate_id)
+
+    if not cert:
+        return jsonify({"error": "Not found"}), 404
+
+    cert.active = True
+    cert.edit_user_id = current_user.id
+
+    db.session.commit()
+
+    return jsonify({"success": True})

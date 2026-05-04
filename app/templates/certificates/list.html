@@ -25,10 +25,10 @@
             Выдача
         </button>
         <button type="button" 
-                class="btn btn-primary mb-3" 
-                id = "usingCertBtn"
+                class="btn btn-danger mb-3" 
+                id="spendCertBtn"
                 disabled>
-            Использование
+            Списание
         </button>
         <button type="button" 
                 class="btn btn-primary mb-3" 
@@ -36,6 +36,13 @@
                 disabled>
             Вывод
         </button>
+        <button type="button" 
+                class="btn btn-primary mb-3" 
+                id = "restoreCertBtn"
+                disabled>
+            Восстановление
+        </button>
+        <!-- Фильтры -->
         <ul class="nav nav-tabs mb-3" id="certFilterTabs">
             <li class="nav-item">
                 <button class="nav-link active filter-btn" data-filter="all">
@@ -43,15 +50,27 @@
                 </button>
             </li>
             <li class="nav-item">
+                <button class="nav-link filter-btn" data-filter="new">
+                    Не выданы
+                </button>
+            </li>
+            <li class="nav-item">
                 <button class="nav-link filter-btn" data-filter="issued">
-                    Выпущены
+                    Выданы
                 </button>
             </li>
             <li class="nav-item">
                 <button class="nav-link filter-btn" data-filter="zero">
-                    Нулевые
+                    Пустые
                 </button>
             </li>
+            {% if current_user.has_permission('certificates_view_out') %}
+            <li class="nav-item">
+                <button class="nav-link filter-btn" data-filter="out">
+                    Выведены
+                </button>
+            </li>
+            {% endif %}
         </ul>
         <!-- Таблица сертификатов -->
         <div class="table-responsive">
@@ -75,10 +94,11 @@
                         <!-- Добавьте другие колонки по необходимости -->
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="certTableBody">
                     {% for cert in certificates %}
                         <tr class="cert-row"
                             data-id="{{ cert.id }}"
+                            
                             data-series="{{ cert.series }}"
                             data-number="{{ cert.number }}"
                             data-create-date="{{ cert.create_date.strftime('%Y-%m-%d') if cert.create_date else '' }}"
@@ -100,6 +120,15 @@
                             data-user-name="{{ cert.editor.name }}"
 
                             data-note="{{ cert.note or '' }}"
+
+                            data-balance="{{ cert.balance }}"
+                            data-status="{{
+                                'new' if not cert.client_id
+                                else 'zero' if cert.balance <= 0
+                                else 'issued'
+                            }}"
+                            {# data-active="{{ cert.active|lower }}" #}
+                            data-active="{{ cert.active|string|lower if cert.active is not none else 'null' }}"
                         >
                             <th scope="row">{{ loop.index }}</th>
                             <td>{{ cert.series }}</td>
@@ -109,7 +138,7 @@
                             <td>{{ cert.reason or '' }}</td>
                             <td>{{ cert.client.name or '' }}</td>
                             <td>{{ cert.total_amount }}</td>
-                            <td>{{ cert.expired_amount }}</td>
+                            <td>{{ cert.balance }}</td>
                             <td>{{ cert.place.name if cert.place else 'Не указано' }}</td>
                             <td>{{ cert.servicegroup.name if cert.servicegroup else 'Не указано' }}</td>
                             <td>{{ cert.creator.name }}</td>
@@ -144,6 +173,10 @@
     {% include "certificates/_cert_modal.html" %}
     <!-- Модальное окно для выдачи сертификата --> 
     {% include "certificates/_issue_modal.html" %}
+    <!-- Модальное окно для списания средств с сертификата --> 
+    {% include "certificates/_spend_modal.html" %}
+    <!-- Модальное окно с историей списания средств с сертификата --> 
+    {% include "certificates/_usage_history_modal.html" %}
 {% endblock %}
 
 {% block scripts %}

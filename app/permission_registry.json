@@ -71,7 +71,38 @@
       "section": "certificates",
       "title": "Сертификаты",
       "permissions": [
-        { "name": "certificates_page", "description": "Доступ к странице сертификатов" }
+        { "name": "certificates_page", 
+          "description": "Доступ к странице сертификатов" 
+        },
+        {
+          "name": "certificates_create",
+          "description": "Кнопка Создать"
+        },
+        {
+          "name": "certificates_edit",
+          "description": "Кнопка Изменить"
+        },
+        {
+          "name": "certificates_issue",
+          "description": "Кнопка Выдать"
+        },
+        {
+          "name": "certificates_spend",
+          "description": "Кнопка Списать"
+        },
+        {
+          "name": "certificates_close",
+          "description": "Кнопка Вывести"
+        },
+        {
+          "name": "certificates_restore",
+          "description": "Кнопка Восстановить"
+        },
+        {
+          "name": "certificates_view_out",
+          "description": "Вкладка Выведенные сертификаты"
+        }
+        
       ]
     },
 
