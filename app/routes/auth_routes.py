@@ -30,7 +30,10 @@ def login():
         current_app.logger.info(f'Попытка входа пользователя: {username}')
 
         if username and password:
-            user = db.session.execute(db.select(User).filter_by(login=username)).scalar_one_or_none()
+            #user = db.session.execute(db.select(User).filter_by(login=username)).unique().scalar_one_or_none()
+            user = db.session.execute(
+                db.select(User).filter_by(login=username)
+            ).scalars().unique().one_or_none()
 
             if user and user.check_password(password):
                 login_user(user, remember=False) # Отмечаем пользователя как вошедшего

@@ -22,7 +22,7 @@ with app.app_context():
         print(f"Создана группа {group.text}")
 
     # Создаём пользователя fakir
-    existing_user = db.session.execute(db.select(User).filter_by(name='fakir')).scalar_one_or_none()
+    existing_user = db.session.execute(db.select(User).filter_by(login='fakir')).unique().scalar_one_or_none()
     if existing_user:
         print("Пользователь 'fakir' уже существует. Обновляем данные...")
         

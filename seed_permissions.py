@@ -14,33 +14,45 @@ with app.app_context():
     all_permissions = get_all_permissions()
     print("Всего permissions в registry:", len(all_permissions))
 
-    groups = Group.query.all()
+    # 1. Гарантируем существование админ-группы
+    admin_group = db.session.execute(
+        db.select(Group).filter_by(text="Default Group")
+    ).scalar_one_or_none()
 
-    if not groups:
-        print("Нет групп — сидить нечего")
-        exit()
+    if not admin_group:
+        print("Default Group не найдена — создаём")
+        admin_group = Group(
+            text="Default Group",
+            note="Auto-created admin group"
+        )
+        db.session.add(admin_group)
+        db.session.commit()
+        print("Default Group создана")
 
-    # предполагаем что первая группа — админы
-    admin_group = groups[0]
-
-    print(f"Назначаем ВСЕ права группе: {admin_group.text}")
-
-    # очищаем старые записи (если были попытки)
-    #GroupPermission.query.delete()
+    # 2. Загружаем существующие связи
     existing = {
         (gp.group_id, gp.permission_name)
         for gp in GroupPermission.query.all()
     }
 
+    print(f"Уже есть связей: {len(existing)}")
+
+    # 3. Добавляем недостающие права
+    added = 0
+
     for perm in all_permissions:
-        if (admin_group.id, perm) not in existing:
+        key = (admin_group.id, perm)
+
+        if key not in existing:
             db.session.add(
                 GroupPermission(
                     group_id=admin_group.id,
                     permission_name=perm
                 )
             )
+            added += 1
 
     db.session.commit()
 
+    print(f"Добавлено новых permissions: {added}")
     print("Seed успешно завершён 🚀")

@@ -3,35 +3,39 @@ set -e
 
 echo "Waiting for database..."
 
-for i in {1..30}; do
-  if python3 - << END
-import pymysql, os
-pymysql.connect(
- host=os.environ.get("DB_HOST"),
- user=os.environ.get("DB_USER"),
- password=os.environ.get("DB_PASSWORD"),
- database=os.environ.get("DB_NAME")
-)
-END
-  then
-    echo "DB ready"
-    break
-  fi
-  sleep 2
-done
+python3 -c "
+import pymysql, os, time
+from pymysql.err import OperationalError
+
+for i in range(30):
+    try:
+        pymysql.connect(
+            host=os.environ.get('DB_HOST'),
+            user=os.environ.get('DB_USER'),
+            password=os.environ.get('DB_PASSWORD'),
+            database=os.environ.get('DB_NAME'),
+            connect_timeout=3
+        )
+        print('DB ready')
+        exit(0)
+    except OperationalError:
+        time.sleep(2)
+
+raise Exception('DB not ready')
+"
 
 echo "Running migrations"
 flask db upgrade
 
-echo "Seeding data"
-python create_user.py
-python seed_permissions.py
+if [ \"${RUN_SEED:-true}\" = "true" ]; then
+  echo "Running seed (idempotent)"
+  python seed_core.py
+  python seed_permissions.py
+fi
 
 echo "Starting gunicorn"
 exec gunicorn wsgi:app \
   --bind 0.0.0.0:5000 \
   --workers 2 \
   --threads 4 \
-  --timeout 120 \
-  --graceful-timeout 30 \
-  --keep-alive 5
+  --timeout 120
