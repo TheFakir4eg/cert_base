@@ -5,6 +5,7 @@
 <div class="container mt-5">
     <h2>Список сертификатов</h2>
         <!-- Кнопка для открытия модального окна создания сертификата-->
+        {% if current_user.has_permission('certificates_create') %}
         <button type="button"
                 class="btn btn-primary mb-3"
                 id="createCertBtn"
@@ -12,36 +13,47 @@
                 data-bs-target="#createCertModal">
             Создание
         </button>
+        {% endif %}
+        {% if current_user.has_permission('certificates_edit') %}
         <button type="button"
                 class="btn btn-warning mb-3"
                 id="editCertBtn"
                 disabled>
             Изменение
         </button>
+        {% endif %}
+        {% if current_user.has_permission('certificates_issue') %}
         <button type="button" 
                 class="btn btn-primary mb-3" 
                 id = "issuingCertBtn"
                 disabled>
             Выдача
         </button>
+        {% endif %}
+        {% if current_user.has_permission('certificates_spend') %}
         <button type="button" 
                 class="btn btn-danger mb-3" 
                 id="spendCertBtn"
                 disabled>
             Списание
         </button>
+        {% endif %}
+        {% if current_user.has_permission('certificates_close') %}
         <button type="button" 
                 class="btn btn-primary mb-3" 
                 id = "closingCertBtn"
                 disabled>
             Вывод
         </button>
+        {% endif %}
+        {% if current_user.has_permission('certificates_restore') %}
         <button type="button" 
                 class="btn btn-primary mb-3" 
                 id = "restoreCertBtn"
                 disabled>
             Восстановление
         </button>
+        {% endif %}
         <!-- Фильтры -->
         <ul class="nav nav-tabs mb-3" id="certFilterTabs">
             <li class="nav-item">

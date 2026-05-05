@@ -15,7 +15,7 @@ with app.app_context():
     if not group:
         group = Group(text="Default Group", note="System admin group")
         db.session.add(group)
-        db.session.commit()
+        db.session.flush()
 
     # USER
     user = db.session.execute(
