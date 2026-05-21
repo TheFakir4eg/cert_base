@@ -104,3 +104,67 @@ body {
 .usage-history-dialog {
     margin-top: 5vh;
 }
+
+/* ===== Поиск сертификатов ===== */
+
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-toggle-btn {
+    width: 42px;
+    height: 42px;
+    font-size: 18px;
+    padding: 0;
+}
+
+.search-box {
+    position: relative;
+    width: 0;
+    overflow: hidden;
+    opacity: 0;
+
+    transition:
+        width 0.25s ease,
+        opacity 0.2s ease;
+}
+
+.search-box.active {
+    width: 300px;
+    opacity: 1;
+}
+
+.search-input {
+    padding-right: 40px;
+    border-radius: 8px;
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    border: none;
+    background: transparent;
+
+    font-size: 18px;
+    color: #6c757d;
+
+    cursor: pointer;
+}
+
+.search-clear-btn:hover {
+    color: #dc3545;
+}
+/* ===== Конец блока Поиск сертификатов ===== */
+.settings-menu {
+    width: 320px;
+}
+
+.settings-btn {
+    text-align: left;
+}

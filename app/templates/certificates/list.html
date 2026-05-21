@@ -4,56 +4,88 @@
 {% block content %}
 <div class="container mt-5">
     <h2>Список сертификатов</h2>
-        <!-- Кнопка для открытия модального окна создания сертификата-->
-        {% if current_user.has_permission('certificates_create') %}
-        <button type="button"
-                class="btn btn-primary mb-3"
-                id="createCertBtn"
-                data-bs-toggle="modal"
-                data-bs-target="#createCertModal">
-            Создание
-        </button>
-        {% endif %}
-        {% if current_user.has_permission('certificates_edit') %}
-        <button type="button"
-                class="btn btn-warning mb-3"
-                id="editCertBtn"
-                disabled>
-            Изменение
-        </button>
-        {% endif %}
-        {% if current_user.has_permission('certificates_issue') %}
-        <button type="button" 
-                class="btn btn-primary mb-3" 
-                id = "issuingCertBtn"
-                disabled>
-            Выдача
-        </button>
-        {% endif %}
-        {% if current_user.has_permission('certificates_spend') %}
-        <button type="button" 
-                class="btn btn-danger mb-3" 
-                id="spendCertBtn"
-                disabled>
-            Списание
-        </button>
-        {% endif %}
-        {% if current_user.has_permission('certificates_close') %}
-        <button type="button" 
-                class="btn btn-primary mb-3" 
-                id = "closingCertBtn"
-                disabled>
-            Вывод
-        </button>
-        {% endif %}
-        {% if current_user.has_permission('certificates_restore') %}
-        <button type="button" 
-                class="btn btn-primary mb-3" 
-                id = "restoreCertBtn"
-                disabled>
-            Восстановление
-        </button>
-        {% endif %}
+        <div class="d-flex align-items-start mb-3">
+
+            <div class="d-flex flex-wrap gap-2">
+                <!-- Кнопка для открытия модального окна создания сертификата-->
+                {% if current_user.has_permission('certificates_create') %}
+                <button type="button"
+                        class="btn btn-primary mb-3"
+                        id="createCertBtn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createCertModal">
+                    Создание
+                </button>
+                {% endif %}
+                {% if current_user.has_permission('certificates_edit') %}
+                <button type="button"
+                        class="btn btn-warning mb-3"
+                        id="editCertBtn"
+                        disabled>
+                    Изменение
+                </button>
+                {% endif %}
+                {% if current_user.has_permission('certificates_issue') %}
+                <button type="button" 
+                        class="btn btn-primary mb-3" 
+                        id = "issuingCertBtn"
+                        disabled>
+                    Выдача
+                </button>
+                {% endif %}
+                {% if current_user.has_permission('certificates_spend') %}
+                <button type="button" 
+                        class="btn btn-danger mb-3" 
+                        id="spendCertBtn"
+                        disabled>
+                    Списание
+                </button>
+                {% endif %}
+                {% if current_user.has_permission('certificates_close') %}
+                <button type="button" 
+                        class="btn btn-primary mb-3" 
+                        id = "closingCertBtn"
+                        disabled>
+                    Вывод
+                </button>
+                {% endif %}
+                {% if current_user.has_permission('certificates_restore') %}
+                <button type="button" 
+                        class="btn btn-primary mb-3" 
+                        id = "restoreCertBtn"
+                        disabled>
+                    Восстановление
+                </button>
+                {% endif %}
+            </div>
+
+            <div class="ms-auto search-container">
+
+                <!-- кнопка-лупа -->
+                <button type="button"
+                        class="btn btn-outline-secondary search-toggle-btn"
+                        id="searchToggleBtn">
+                    🔍
+                </button>
+
+                <!-- поле поиска -->
+                <div class="search-box d-none" id="searchBox">
+                    <input type="text"
+                        class="form-control search-input"
+                        id="certSearchInput"
+                        placeholder="Поиск сертификата...">
+
+                    <button type="button"
+                            class="search-clear-btn"
+                            id="clearSearchBtn">
+                        ✕
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+        
         <!-- Фильтры -->
         <ul class="nav nav-tabs mb-3" id="certFilterTabs">
             <li class="nav-item">

@@ -5,33 +5,45 @@
 <h2>Настройки</h2>
 <div class="container mt-5">
         <!-- Кнопка для Places -->
+        {% if current_user.has_permission('places_page') %}
         <div class="col-md-3 mb-3">
             <a href="{{ url_for('places.list_places') }}" class="btn btn-info d-block h-100">
                 Места выдачи
             </a>
-        </div>       
+        </div>
+        {% endif %}       
         <!-- Кнопка для Users -->
+        {% if current_user.has_permission('users_page') %}
         <div class="col-md-3 mb-3">
             <a href="{{ url_for('users.list_users') }}" class="btn btn-info d-block h-100">
                 Пользователи
             </a>
         </div>
+        {% endif %} 
         <!-- Кнопка для Groups -->
+        {% if current_user.has_permission('groups_page') %}
         <div class="col-md-3 mb-3">
             <a href="{{ url_for('settings.list_groups') }}" class="btn btn-info d-block h-100">
                 Группы пользователей
             </a>
         </div>
+        {% endif %}
+        <!-- Кнопка для Servicegroup -->
+        {% if current_user.has_permission('servicegroups_page') %}
         <div class="col-md-3 mb-3">
             <a href="{{ url_for('settings.servicegroup') }}" class="btn btn-info d-block h-100">
                 Группы услуг
             </a>
         </div>
+        {% endif %} 
+        <!-- Кнопка для Clients -->
+        {% if current_user.has_permission('clients_page') %}
         <div class="col-md-3 mb-3">
             <a href="{{ url_for('clients.list_clients') }}" class="btn btn-info d-block h-100">
                 Клиенты
             </a>
         </div>
+        {% endif %} 
         <a href="{{ url_for('auth.index') }}" class="btn btn-secondary mt-3">Назад</a>
 </div>
 
