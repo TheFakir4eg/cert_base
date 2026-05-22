@@ -26,6 +26,7 @@ services:
       DB_PASSWORD: Ytrhjvfyn16!!!
       DB_NAME: cert_db
       SECRET_KEY: change_this_super_secret_key
+      RUN_SEED: "true"
     ports:
       - "58888:5000"
 

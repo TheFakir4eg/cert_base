@@ -6,7 +6,11 @@
     <h2>Список клиентов</h2>
 
     <!-- Кнопка для открытия модального окна -->
-    <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createClientModal">
+    <button type="button"
+            id="createClientBtn"
+            class="btn btn-primary mb-3"
+            data-bs-toggle="modal"
+            data-bs-target="#createClientModal">
         Создать
     </button>
 
@@ -14,21 +18,35 @@
     {% for client in clients %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
             {{ client.name }} - {{ client.phone }} - {{ client.note }}
-            <!-- Форма удаления -->
-            <form method="POST" style="display:inline;" id="delete-form-{{ client.id }}">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="client_id" value="{{ client.id }}">
-                <!-- Добавляем id и onclick к кнопке -->
+            <div class="d-flex gap-1">
+
                 <button type="button"
-                        class="btn btn-danger btn-sm"
-                        title="Удалить {{ client.name }}"
-                        data-confirm="true"
-                        data-confirm-title="Удаление клиента"
-                        data-confirm-text="Вы уверены, что хотите удалить клиента «{{ client.name }}»?"
-                        data-confirm-form-id="delete-form-{{ client.id }}">
-                    ❌
+                        class="btn btn-warning btn-sm edit-client-btn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createClientModal"
+                        data-client-id="{{ client.id }}"
+                        data-client-name="{{ client.name }}"
+                        data-client-phone="{{ client.phone or '' }}"
+                        data-client-note="{{ client.note or '' }}">
+                    ✏️
                 </button>
-            </form>
+
+                <form method="POST" style="display:inline;" id="delete-form-{{ client.id }}">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="client_id" value="{{ client.id }}">
+
+                    <button type="button"
+                            class="btn btn-danger btn-sm"
+                            title="Удалить {{ client.name }}"
+                            data-confirm="true"
+                            data-confirm-title="Удаление клиента"
+                            data-confirm-text="Вы уверены, что хотите удалить клиента «{{ client.name }}»?"
+                            data-confirm-form-id="delete-form-{{ client.id }}">
+                        ❌
+                    </button>
+                </form>
+
+            </div>
         </li>
     {% else %}
         <!-- Этот блок отображается, если список places пуст -->
@@ -38,7 +56,7 @@
     <a href="{{ url_for('settings.settings') }}" class="btn btn-secondary mt-3">Назад</a>
 </div>
 
-<!-- Модальное окно для создания места -->
+<!-- Модальное окно для создания клиента -->
 <div class="modal fade" id="createClientModal" tabindex="-1" aria-labelledby="createClientModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -46,28 +64,51 @@
         <h5 class="modal-title" id="createClientModalLabel">Создать клиента</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form method="POST">
-          <div class="modal-body">
-              <input type="hidden" name="action" value="create"> <!-- Скрытое поле действия -->
-              <div class="mb-3">
-                  <label for="name" class="form-label">Имя *</label>
-                  <input type="text" class="form-control" id="name" name="name" required>
-              </div>
-              <div class="mb-3">
-                  <label for="phone" class="form-label">№ телефона</label>
-                  <input type="text" class="form-control" id="phone" name="phone">
-              </div>
-              <div class="mb-3">
-                  <label for="note" class="form-label">Комментарий</label>
-                  <input type="text" class="form-control" id="note" name="note">
-              </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-            <button type="submit" class="btn btn-primary">Создать</button>
-          </div>
-      </form>
+      <form method="POST" id="clientForm">
+            <div class="modal-body">
+                <input type="hidden" name="action" id="clientAction" value="create">
+                <input type="hidden" name="client_id" id="clientId">
+                <div class="mb-3">
+                    <label class="form-label">Имя *</label>
+                    <input type="text"
+                        class="form-control"
+                        id="clientName"
+                        name="name"
+                        required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">№ телефона</label>
+                    <input type="text"
+                        class="form-control"
+                        id="clientPhone"
+                        name="phone">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Комментарий</label>
+                    <input type="text"
+                        class="form-control"
+                        id="clientNote"
+                        name="note">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Закрыть
+                </button>
+                <button type="submit"
+                        class="btn btn-primary"
+                        id="clientSubmitBtn">
+                    Создать
+                </button>
+            </div>
+        </form>
     </div>
   </div>
 </div>
+{% endblock %}
+{% block scripts %}
+    <!-- Подключаем JS файл -->
+    <script src="{{ url_for('static', filename='js/clients.js') }}"></script>
 {% endblock %}

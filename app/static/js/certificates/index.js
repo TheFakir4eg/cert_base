@@ -1,0 +1,1 @@
+import "./certModalWindow.js";

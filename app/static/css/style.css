@@ -168,3 +168,59 @@ body {
 .settings-btn {
     text-align: left;
 }
+
+/* ===== Фильтр колонок ===== */
+
+.table-filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.column-filter-btn {
+    border: none;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+}
+
+.column-filter-btn:hover {
+    color: #adb5bd;
+}
+
+.column-filter-btn.active-filter {
+    color: #198754;
+}
+
+.column-filter-popup {
+    position: absolute;
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 10px;
+    width: 220px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 2000;
+}
+
+.icon-btn-ghost {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: #6c757d;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.icon-btn-ghost:hover {
+    background: rgba(13, 110, 253, 0.08);
+    color: #0d6efd;
+}
+
+.icon-btn-ghost:active {
+    transform: scale(0.95);
+}

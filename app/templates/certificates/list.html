@@ -60,30 +60,25 @@
             </div>
 
             <div class="ms-auto search-container">
-
                 <!-- кнопка-лупа -->
                 <button type="button"
                         class="btn btn-outline-secondary search-toggle-btn"
                         id="searchToggleBtn">
                     🔍
                 </button>
-
                 <!-- поле поиска -->
                 <div class="search-box d-none" id="searchBox">
                     <input type="text"
                         class="form-control search-input"
                         id="certSearchInput"
                         placeholder="Поиск сертификата...">
-
                     <button type="button"
                             class="search-clear-btn"
                             id="clearSearchBtn">
                         ✕
                     </button>
                 </div>
-
             </div>
-
         </div>
         
         <!-- Фильтры -->
@@ -122,19 +117,149 @@
                 <thead class="table-dark">
                     <tr>
                         <th scope="col">#</th> <!-- Колонка с номером строки -->
-                        <th scope="col">Серия</th>
-                        <th scope="col">Номер</th>
-                        <th scope="col">Дата создания</th>
-                        <th scope="col">Дата выдачи</th>
-                        <th scope="col">Причина</th>
-                        <th scope="col">Клиент</th>
-                        <th scope="col">Номинал</th>
-                        <th scope="col">Остаток</th>
-                        <th scope="col">Место выдачи</th>
-                        <th scope="col">Группа услуг</th>
-                        <th scope="col">Создал</th>
-                        <th scope="col">Изменил</th>
-                        <th scope="col">Примечание</th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Серия</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="1"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Номер</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="2"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Дата создания</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="3"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Дата выдачи</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="4"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Причина</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="5"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Клиент</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="6"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Номинал</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="7"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Остаток</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="8"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Место выдачи</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="9"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Группа услуг</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="10"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Создал</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="11"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Изменил</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="12"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
+                        <th scope="col">
+                            <div class="table-filter-header">
+                                <span>Примечание</span>
+                                <button
+                                    class="column-filter-btn"
+                                    data-column="13"
+                                    type="button">
+                                    <i class="bi bi-caret-down-fill"></i>
+                                </button>
+                            </div>
+                        </th>
                         <!-- Добавьте другие колонки по необходимости -->
                     </tr>
                 </thead>
@@ -199,6 +324,29 @@
                 </tbody>
             </table>
         </div>
+        <div id="columnFilterPopup" class="column-filter-popup d-none">
+            <input
+                type="text"
+                id="columnFilterInput"
+                class="form-control mb-2"
+                placeholder="Фильтр...">
+            <button
+                type="button"
+                class="icon-btn-ghost"
+                id="applyColumnFilterBtn"
+                title="Применить">
+
+                <i class="bi bi-check-circle"></i>
+            </button>
+            <button
+                type="button"
+                class="icon-btn-ghost"
+                id="clearColumnFilterBtn"
+                title="Сброс">
+
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+        </div>
     <a href="{{ url_for('auth.index') }}" class="btn btn-secondary mt-3">Назад</a>
 </div>
 <!-- Модальное окно для создания сертификата -->
@@ -225,5 +373,5 @@
 
 {% block scripts %}
     <!-- Подключаем JS файл -->
-    <script src="{{ url_for('static', filename='js/certModalWindow.js') }}"></script>
+    <script type="module" src="/static/js/certificates/index.js"></script>
 {% endblock %}

@@ -75,6 +75,36 @@ def list_clients():
             else:
                 flash('⚠️ Не указан ID клиента для удаления.', 'warning')
 
+        elif action == 'edit':
+            client_id = request.form.get('client_id')
+
+            name = request.form.get('name')
+            phone = request.form.get('phone')
+            note = request.form.get('note')
+
+            if client_id and name:
+                try:
+                    client = db.session.get(Client, int(client_id))
+
+                    if client:
+                        client.name = name
+                        client.phone = phone if phone else None
+                        client.note = note if note else None
+
+                        db.session.commit()
+
+                        flash(f'✅ Клиент "{client.name}" обновлен!', 'success')
+
+                    else:
+                        flash('❌ Клиент не найден.', 'danger')
+
+                except Exception as e:
+                    db.session.rollback()
+
+                    current_app.logger.error(f"Ошибка обновления клиента: {e}")
+
+                    flash(f'❌ Ошибка обновления клиента: {str(e)}', 'danger')
+                    
         else:
             # Если action не 'create' и не 'delete', или вообще отсутствует
             flash('⚠️ Неизвестное действие.', 'warning')

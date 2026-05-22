@@ -1,4 +1,5 @@
 // /app/static/js/certModalWindow.js
+export {};
 
 const issuingBtn = document.getElementById("issuingCertBtn");
 const editingBtn = document.getElementById("editCertBtn");
