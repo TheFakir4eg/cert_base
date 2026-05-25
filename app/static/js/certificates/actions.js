@@ -61,7 +61,7 @@ if (dom.issuingBtn) {
 
         document.getElementById("issue_cert_id").value = state.selectedRow.dataset.id;
 
-        // дат выдачи - сегодня
+        // дата выдачи - сегодня
         const today = new Date().toISOString().split('T')[0];
         document.getElementById("issue_date").value = today;
 
@@ -69,6 +69,7 @@ if (dom.issuingBtn) {
     });
 }
 
+// выдача сертификата. Обработка нажатия "Выдать" в модалке
 document.getElementById("issueCertForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
