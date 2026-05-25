@@ -27,6 +27,15 @@
           </div>
 
           <div class="mb-3">
+            <label class="form-label">Место</label>
+            <select class="form-select" id="issue_place">
+              {% for place in places %}
+                <option value="{{ place.id }}">{{ place.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
             <label class="form-label">Комментарий</label>
             <textarea class="form-control" id="issue_note"></textarea>
           </div>

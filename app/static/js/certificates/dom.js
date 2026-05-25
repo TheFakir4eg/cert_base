@@ -25,3 +25,4 @@ export const spendModal = new bootstrap.Modal(
 export const issueModal = new bootstrap.Modal(
     document.getElementById("issueCertModal")
 );
+

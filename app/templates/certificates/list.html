@@ -10,7 +10,7 @@
                 <!-- Кнопка для открытия модального окна создания сертификата-->
                 {% if current_user.has_permission('certificates_create') %}
                 <button type="button"
-                        class="btn btn-primary mb-3"
+                        class="btn btn-info mb-3"
                         id="createCertBtn"
                         data-bs-toggle="modal"
                         data-bs-target="#createCertModal">
@@ -19,7 +19,7 @@
                 {% endif %}
                 {% if current_user.has_permission('certificates_edit') %}
                 <button type="button"
-                        class="btn btn-warning mb-3"
+                        class="btn btn-info mb-3"
                         id="editCertBtn"
                         disabled>
                     Изменение
@@ -27,7 +27,7 @@
                 {% endif %}
                 {% if current_user.has_permission('certificates_issue') %}
                 <button type="button" 
-                        class="btn btn-primary mb-3" 
+                        class="btn btn-info mb-3" 
                         id = "issuingCertBtn"
                         disabled>
                     Выдача
@@ -35,7 +35,7 @@
                 {% endif %}
                 {% if current_user.has_permission('certificates_spend') %}
                 <button type="button" 
-                        class="btn btn-danger mb-3" 
+                        class="btn btn-info mb-3" 
                         id="spendCertBtn"
                         disabled>
                     Списание
@@ -43,7 +43,7 @@
                 {% endif %}
                 {% if current_user.has_permission('certificates_close') %}
                 <button type="button" 
-                        class="btn btn-primary mb-3" 
+                        class="btn btn-info mb-3" 
                         id = "closingCertBtn"
                         disabled>
                     Вывод
@@ -51,7 +51,7 @@
                 {% endif %}
                 {% if current_user.has_permission('certificates_restore') %}
                 <button type="button" 
-                        class="btn btn-primary mb-3" 
+                        class="btn btn-info mb-3" 
                         id = "restoreCertBtn"
                         disabled>
                     Восстановление

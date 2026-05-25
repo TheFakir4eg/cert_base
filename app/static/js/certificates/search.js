@@ -1,82 +1,56 @@
 // /app/static/js/certificates/search.js
-
-import {
-    searchToggleBtn,
-    searchBox,
-    searchInput,
-    clearSearchBtn
-} from "./dom.js";
-
+import * as dom from "./dom.js";
 import { state } from "./state.js";
+import {
+    applyFilter,
+    getCurrentFilter
+} from "./filters.js";
 
-import { applyFilter, getCurrentFilter } from "./filters.js";
-
-export function initSearch() {
-
-    if (searchToggleBtn && searchBox && searchInput) {
-
-        searchToggleBtn.addEventListener("click", () => {
-
-            searchToggleBtn.classList.add("d-none");
-
-            searchBox.classList.remove("d-none");
-
-            requestAnimationFrame(() => {
-                searchBox.classList.add("active");
-            });
-
-            searchInput.focus();
-        });
-    }
-
-    if (clearSearchBtn) {
-
-        clearSearchBtn.addEventListener("click", () => {
-
-            state.currentSearch = "";
-
-            searchInput.value = "";
-
-            applyFilter(getCurrentFilter());
-
-            closeSearch();
-        });
-    }
-
-    if (searchInput) {
-
-        searchInput.addEventListener("input", () => {
-
-            state.currentSearch = searchInput.value
-                .trim()
-                .toLowerCase();
-
-            applyFilter(getCurrentFilter());
-        });
-    }
-
-    document.addEventListener("click", (e) => {
-
-        if (
-            searchBox &&
-            !searchBox.classList.contains("d-none") &&
-            !searchBox.contains(e.target) &&
-            e.target !== searchToggleBtn
-        ) {
-            closeSearch();
-        }
+//работа кнопки "Поиск" (лупа)
+if (dom.searchToggleBtn && dom.searchBox && dom.searchInput) {
+    dom.searchToggleBtn.addEventListener("click", () => {
+        dom.searchToggleBtn.classList.add("d-none");
+        dom.searchBox.classList.remove("d-none");
+        requestAnimationFrame(() => {dom.searchBox.classList.add("active");});
+        dom.searchInput.focus();
     });
 }
 
-function closeSearch() {
-
-    searchBox.classList.remove("active");
-
-    setTimeout(() => {
-
-        searchBox.classList.add("d-none");
-
-        searchToggleBtn.classList.remove("d-none");
-
-    }, 250);
+if (dom.clearSearchBtn) {
+    dom.clearSearchBtn.addEventListener("click", () => {
+        state.currentSearch = "";
+        dom.searchInput.value = "";
+        applyFilter(getCurrentFilter());
+        dom.searchBox.classList.remove("active");
+        setTimeout(() => {
+            dom.searchBox.classList.add("d-none");
+            dom.searchToggleBtn.classList.remove("d-none");
+        }, 250);
+    });
 }
+
+if (dom.searchInput) {
+    dom.searchInput.addEventListener("input", () => {
+        state.currentSearch = dom.searchInput.value.trim().toLowerCase();
+        applyFilter(getCurrentFilter());
+    });
+}
+
+document.addEventListener("click", (e) => {
+
+    // закрытие dom.searchBox
+    if (
+        dom.searchBox &&
+        !dom.searchBox.classList.contains("d-none") &&
+        !dom.searchBox.contains(e.target) &&
+        e.target !== dom.searchToggleBtn
+    ) {
+        dom.searchBox.classList.remove("active");
+
+        setTimeout(() => {
+            dom.searchBox.classList.add("d-none");
+            dom.searchToggleBtn.classList.remove("d-none");
+        }, 250);
+    }
+
+});

@@ -145,6 +145,7 @@ def issue_certificate():
 
     cert.client_id = data["client_id"]
     cert.issue_date = data["issue_date"]
+    cert.place_id = data["place_id"]
     cert.note = data["note"]
 
     db.session.commit()
