@@ -10,14 +10,27 @@ import {
 
 document.addEventListener("DOMContentLoaded", () => {
 
+    // загружаем сохраненный фильтр из памяти
+    const savedFilter = localStorage.getItem("certificatesFilter");
+
     // вкладка по умолчанию
-    let activeTab = document.querySelector(".filter-btn.active");
+    //let activeTab = document.querySelector(".filter-btn.active");
+    let activeTab = savedFilter
+        ? document.querySelector(
+            `.filter-btn[data-filter="${savedFilter}"]`
+        )
+        : document.querySelector(".filter-btn.active");
 
     // если активной нет — берем первую доступную
     if (!activeTab) {
         activeTab = document.querySelector(".filter-btn");
     }
 
+    // сбрасываем предыдущий фильтр
+    document
+        .querySelectorAll(".filter-btn")
+        .forEach(btn => btn.classList.remove("active"));
+        
     // применяем фильтр
     if (activeTab) {
         activeTab.classList.add("active");

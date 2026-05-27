@@ -4,14 +4,14 @@ import * as dom from "./dom.js";
 import { openUsageHistory } from "./actions.js";
 import { state } from "./state.js";
 
+// обработка клика по строке
 dom.tbody.addEventListener("click", (e) => {
-
     const row = e.target.closest(".cert-row");
     if (!row) return;
-
     selectRow(row);
 });
 
+// обработка двойного клика по строке  - вызов модалки "история транзакций"
 dom.tbody.addEventListener("dblclick", async (e) => {
     const row = e.target.closest(".cert-row");
     if (!row) return;
@@ -21,9 +21,7 @@ dom.tbody.addEventListener("dblclick", async (e) => {
 
 
 function selectRow(row) {
-
-    document.querySelectorAll(".cert-row")
-        .forEach(r => r.classList.remove("table-primary"));
+    document.querySelectorAll(".cert-row").forEach(r => r.classList.remove("table-primary"));
 
     row.classList.add("table-primary");
 
@@ -55,6 +53,7 @@ function selectRow(row) {
     }
 }
 
+// обновления видка кнопок в зависимости от состояния строки
 function updateButtonsState() {
     if (dom.editingBtn) {
         dom.editingBtn.disabled = !state.selectedRow;

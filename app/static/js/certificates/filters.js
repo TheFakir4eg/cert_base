@@ -62,6 +62,12 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
     btn.addEventListener("click", () => {
         document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
+        // Сохраняем выбранный фильтр в память
+        localStorage.setItem(
+            "certificatesFilter",
+            btn.dataset.filter
+        );
+        
         applyFilter(btn.dataset.filter);
     });
 });
