@@ -124,3 +124,10 @@ function showFlash(message, type="success") {
         setTimeout(() => alert.remove(), 500);
     }, 2500);
 }
+
+export function money(value) {
+    return Number(value).toLocaleString("ru-RU", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}

@@ -2,7 +2,8 @@
 
 import * as dom from "./dom.js";
 import { state } from "./state.js";
-
+import { money } from "../utils.js";
+ 
 // функция показа истории транзакций
 export async function openUsageHistory(certId) {
     const response = await fetch(`/certificates/${certId}/usages`);
@@ -19,7 +20,7 @@ export async function openUsageHistory(certId) {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${u.date}</td>
-                <td>${u.amount}</td>
+                <td>${money(u.amount)}</td>
                 <td>${u.user}</td>
                 <td>${u.comment}</td>
             `;

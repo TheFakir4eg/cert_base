@@ -5,6 +5,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from dotenv import load_dotenv
+
+from app.services.filters import money
 from .config import Config
 import os
 
@@ -35,6 +37,7 @@ def create_app():
     # app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here') # Установите SECRET_KEY
     app.config["JSON_AS_ASCII"] = False
     app.json.ensure_ascii = False
+    app.jinja_env.filters["money"] = money
     
     app.config.from_object(Config)
 

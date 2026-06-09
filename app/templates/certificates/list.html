@@ -306,8 +306,8 @@
                             <td>{{ cert.issue_date.strftime('%d.%m.%Y') if cert.issue_date else '' }}</td>
                             <td>{{ cert.reason or '' }}</td>
                             <td>{{ cert.client.name or '' }}</td>
-                            <td>{{ cert.total_amount }}</td>
-                            <td>{{ cert.balance }}</td>
+                            <td>{{ cert.total_amount | money }}</td>
+                            <td>{{ cert.balance | money }}</td>
                             <td>{{ cert.place.name if cert.place else 'Не указано' }}</td>
                             <td>{{ cert.servicegroup.name if cert.servicegroup else 'Не указано' }}</td>
                             <td>{{ cert.creator.name }}</td>
