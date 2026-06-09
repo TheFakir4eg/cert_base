@@ -45,7 +45,7 @@ class Certificate(db.Model): # Модель для таблицы certificates
     total_amount = db.Column(Numeric(10,2), nullable=False)
     #expired_amount = db.Column(db.String(20), nullable=False) # остаток сертификата, изначально равен номиналу. !!! Исправить на Integer(string нельзя складывать)
     # expired_amount = db.Column(Numeric(10,2), nullable=False)
-    note = db.Column(db.String(100), nullable=True)
+    note = db.Column(db.String(250), nullable=True)
     # показатель активности (для вывода из оборота)
     active = db.Column(db.Boolean, default=True, nullable=False)
     # Отношения между таблицами
@@ -97,7 +97,7 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(50), nullable=False) # данные ФИО
     password_hash = db.Column(db.String(255)) # поле для хеша пароля
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True) # Внешний ключ, группы прав пользователя
-    note = db.Column(db.String(100), nullable=True)
+    note = db.Column(db.String(250), nullable=True)
     create_date = db.Column(db.DateTime, default=lambda: datetime.now())
     active = db.Column(db.Boolean, default=True, nullable=False) # статус активности учетной записи
     
@@ -145,7 +145,7 @@ class Group(db.Model):
     __tablename__ = 'groups'
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(50), nullable=False)
-    note = db.Column(db.String(100), nullable=True)
+    note = db.Column(db.String(250), nullable=True)
     # --- Добавляем relationship для связи с Users ---
     # Отношение "один ко многим": одна группа может иметь много пользователей
     # Используем back_populates для двустороннего доступа
@@ -197,7 +197,7 @@ class Place(db.Model): # Модель для таблицы places
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     address = db.Column(db.String(200), nullable=True) # Может быть nullable=True, если адрес не обязателен
-    note = db.Column(db.String(100), nullable=True)
+    note = db.Column(db.String(250), nullable=True)
     
     # Отношение "один ко многим": одно место может иметь много сертификатов
     # backref автоматически создает атрибут 'place' в модели Certificate,
@@ -220,7 +220,7 @@ class ServiceGroup(db.Model):
     __tablename__ = 'servicegroup'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20), nullable=False)
-    note = db.Column(db.String(100), nullable=True)
+    note = db.Column(db.String(250), nullable=True)
     
     # Отношения
     certificates = db.relationship('Certificate', backref='servicegroup', lazy=True) 
@@ -235,7 +235,7 @@ class Client(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     phone = db.Column(db.String(12), nullable=True)
-    note = db.Column(db.String(100), nullable=True)
+    note = db.Column(db.String(250), nullable=True)
     
     certificates = db.relationship('Certificate', backref='client', lazy=True)
     
