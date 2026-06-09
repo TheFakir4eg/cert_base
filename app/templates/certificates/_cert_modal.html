@@ -7,9 +7,13 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <form method="POST">
+      <form method="POST"
+            id="{{ action }}CertForm">
           <div class="modal-body">
-
+              <div
+                  id="createCertError"
+                  class="alert alert-danger d-none">
+              </div>
               <!-- действие create / edit -->
               <input type="hidden" name="action" value="{{ action }}">
               <input type="hidden" name="cert_id" value="{{ cert.id if cert else '' }}">

@@ -2,7 +2,7 @@
 
 import * as dom from "./dom.js";
 import { state } from "./state.js";
-import { money } from "../utils.js";
+import { money, showFlash } from "../utils.js";
  
 // функция показа истории транзакций
 export async function openUsageHistory(certId) {
@@ -142,6 +142,56 @@ if (dom.restoreBtn) {
             setTimeout(() => location.reload(), 1500);
         } else {
             alert(result.error || "Ошибка");
+        }
+    });
+}
+
+const createForm = document.getElementById("createCertForm");
+
+if (createForm) {
+    createForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const errorBlock =
+            document.getElementById("createCertError");
+
+        errorBlock.classList.add("d-none");
+        errorBlock.textContent = "";
+
+        const formData = new FormData(createForm);
+
+        try {
+            const response = await fetch("/certificates", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                errorBlock.textContent =
+                    result.message || "Ошибка создания сертификата";
+
+                errorBlock.classList.remove("d-none");
+                return;
+            }
+            sessionStorage.setItem(
+                "flashSuccess",
+                result.message
+            );
+
+            location.reload();
+            // setTimeout(() => {
+            //     location.reload();
+            // }, 1000);
+
+            
+
+        } catch (error) {
+            errorBlock.textContent =
+                "Ошибка соединения с сервером";
+
+            errorBlock.classList.remove("d-none");
         }
     });
 }

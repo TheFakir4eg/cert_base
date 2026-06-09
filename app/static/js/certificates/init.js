@@ -6,9 +6,17 @@ import {
     applyFilter,
     getCurrentFilter
 } from "./filters.js";
+import { showFlash } from "../utils.js";
 
 
 document.addEventListener("DOMContentLoaded", () => {
+
+    const message = sessionStorage.getItem("flashSuccess");
+
+    if (message) {
+        showFlash(message, "success");
+        sessionStorage.removeItem("flashSuccess");
+    }
 
     // загружаем сохраненный фильтр из памяти
     const savedFilter = localStorage.getItem("certificatesFilter");

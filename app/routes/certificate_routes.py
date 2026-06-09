@@ -29,48 +29,108 @@ def list_certificates():
             servicegroup_id_str = request.form.get('servicegroup_id')
             note = request.form.get('note')
 
-            # Валидация (минимальная)
-            if number and total_amount: 
-                try:
-                    # Конвертируем дату (если указана)
-                    from datetime import datetime
-                    create_date = datetime.now()
+            existing_cert = db.session.execute(
+                db.select(Certificate).where(
+                    Certificate.series == series,
+                    Certificate.number == number
+                )
+            ).scalar_one_or_none()
+            
+            # проверяем существование сертификата с полученными данными (серия и номер) 
+            if existing_cert:
+                return jsonify({
+                    "success": False,
+                    "message": "Сертификат уже существует"
+                }), 400
 
-                    # Конвертируем ID
-                    servicegroup_id = int(servicegroup_id_str) if servicegroup_id_str else None
-                    user_id = int(current_user.id) # в качестве создателя пишем текущего пользователя
+            try:
+                # Конвертируем дату (если указана)
+                from datetime import datetime
+                create_date = datetime.now()
 
-                    # Создаём новый сертификат
-                    new_cert = Certificate(
-                        number=number,
-                        create_date=create_date,
-                        reason=reason,
-                        series=series,
-                        total_amount=total_amount,
-                        servicegroup_id=servicegroup_id,
-                        user_id=user_id, # ID пользователя-создателя (обязательно)
+                # Конвертируем ID
+                servicegroup_id = int(servicegroup_id_str) if servicegroup_id_str else None
+                user_id = int(current_user.id) # в качестве создателя пишем текущего пользователя
+
+                # Создаём новый сертификат
+                new_cert = Certificate(
+                    number=number,
+                    create_date=create_date,
+                    reason=reason,
+                    series=series,
+                    total_amount=total_amount,
+                    servicegroup_id=servicegroup_id,
+                    user_id=user_id, # ID пользователя-создателя (обязательно)
+                    
+                    note=note
+                )
+
+                db.session.add(new_cert)
+                db.session.commit()
+
+                return jsonify({
+                    "success": True,
+                    "message": "Сертификат успешно создан"
+                })
+
+            except Exception as e:
+                db.session.rollback()
+
+                return jsonify({
+                    "success": False,
+                    "message": str(e)
+                }), 500
+            # # Обработка формы создания сертификата
+            # reason = request.form.get('reason')
+            # series = request.form.get('series')
+            # number = request.form.get('number')
+            # total_amount = request.form.get('total_amount')
+            # # Получаем ID как строки из формы
+            # servicegroup_id_str = request.form.get('servicegroup_id')
+            # note = request.form.get('note')
+
+            # # Валидация (минимальная)
+            # if number and total_amount: 
+            #     try:
+            #         # Конвертируем дату (если указана)
+            #         from datetime import datetime
+            #         create_date = datetime.now()
+
+            #         # Конвертируем ID
+            #         servicegroup_id = int(servicegroup_id_str) if servicegroup_id_str else None
+            #         user_id = int(current_user.id) # в качестве создателя пишем текущего пользователя
+
+            #         # Создаём новый сертификат
+            #         new_cert = Certificate(
+            #             number=number,
+            #             create_date=create_date,
+            #             reason=reason,
+            #             series=series,
+            #             total_amount=total_amount,
+            #             servicegroup_id=servicegroup_id,
+            #             user_id=user_id, # ID пользователя-создателя (обязательно)
                         
-                        note=note
-                    )
+            #             note=note
+            #         )
 
-                    db.session.add(new_cert)
-                    db.session.commit()
+            #         db.session.add(new_cert)
+            #         db.session.commit()
 
-                    current_app.logger.info(f"Создан сертификат: {new_cert.number}")
-                    flash(f'✅ Сертификат "{new_cert.number}" успешно создан!', 'success')
+            #         current_app.logger.info(f"Создан сертификат: {new_cert.number}")
+            #         flash(f'✅ Сертификат "{new_cert.number}" успешно создан!', 'success')
 
-                except ValueError as ve:
-                    # Ошибка при конвертации даты или ID
-                    current_app.logger.error(f"Ошибка валидации данных при создании сертификата: {e}")
-                    flash(f'❌ Ошибка в данных: {str(e)}. Проверьте введённые значения.', 'danger')
-                except Exception as e:
-                    db.session.rollback()
-                    current_app.logger.error(f"Ошибка при создании сертификата: {e}")
-                    flash(f'❌ Ошибка при создании сертификата: {str(e)}', 'danger')
-            else:
-                flash('⚠️ Пожалуйста, заполните обязательные поля (номер, номинал, создатель).', 'warning')
+            #     except ValueError as ve:
+            #         # Ошибка при конвертации даты или ID
+            #         current_app.logger.error(f"Ошибка валидации данных при создании сертификата: {e}")
+            #         flash(f'❌ Ошибка в данных: {str(e)}. Проверьте введённые значения.', 'danger')
+            #     except Exception as e:
+            #         db.session.rollback()
+            #         current_app.logger.error(f"Ошибка при создании сертификата: {e}")
+            #         flash(f'❌ Ошибка при создании сертификата: {str(e)}', 'danger')
+            # else:
+            #     flash('⚠️ Пожалуйста, заполните обязательные поля (номер, номинал, создатель).', 'warning')
 
-            return redirect(url_for('certificates.list_certificates'))
+            # return redirect(url_for('certificates.list_certificates'))
 
         elif action == 'edit':
             cert_id_str = request.form.get('cert_id')

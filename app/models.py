@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from app.utils.permission_registry import permission_exists
 from sqlalchemy.orm import validates
-from sqlalchemy import Numeric, func
+from sqlalchemy import Numeric, func, UniqueConstraint
 from decimal import Decimal
 
 class Certificate(db.Model): # Модель для таблицы certificates
@@ -21,7 +21,9 @@ class Certificate(db.Model): # Модель для таблицы certificates
 
     """
     __tablename__ = 'certificates'
-
+    __table_args__ = (
+        UniqueConstraint('series', 'number', name='uq_certificate_series_number'),
+    )
     id = db.Column(db.Integer, primary_key=True)
     # создание сертификата
     create_date = db.Column(db.DateTime, default=lambda: datetime.now()) # Дата создания. Записывается в бд автоматически. 
