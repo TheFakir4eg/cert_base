@@ -1,0 +1,53 @@
+<!-- /app/templates/components/client_modal.html -->
+
+<!-- Модальное окно для создания клиента -->
+<div class="modal fade" id="createClientModal" tabindex="-1" aria-labelledby="createClientModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createClientModalLabel">Создать клиента</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" id="clientForm">
+            <div class="modal-body">
+                <input type="hidden" name="action" id="clientAction" value="create">
+                <input type="hidden" name="client_id" id="clientId">
+                <div class="mb-3">
+                    <label class="form-label">Имя *</label>
+                    <input type="text"
+                        class="form-control"
+                        id="clientName"
+                        name="name"
+                        required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">№ телефона</label>
+                    <input type="text"
+                        class="form-control"
+                        id="clientPhone"
+                        name="phone">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Комментарий</label>
+                    <input type="text"
+                        class="form-control"
+                        id="clientNote"
+                        name="note">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Закрыть
+                </button>
+                <button type="submit"
+                        class="btn btn-primary"
+                        id="clientSubmitBtn">
+                    Создать
+                </button>
+            </div>
+        </form>
+    </div>
+  </div>
+</div>

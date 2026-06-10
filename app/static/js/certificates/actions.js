@@ -3,7 +3,60 @@
 import * as dom from "./dom.js";
 import { state } from "./state.js";
 import { money, showFlash } from "../utils.js";
- 
+//import { prepareCreateClientForm } from "../clients/modal.js";
+import { eventBus } from "../core/eventBus.js";
+import { openCreateClientModal } from "../clients/modal.js";
+
+const issueClientSelect = new TomSelect("#issue_client", {
+    create: false,
+    placeholder: "Начните вводить клиента..."
+});
+
+let currentClientSearch = "";
+
+issueClientSelect.on("type", (str) => {
+    //currentClientSearch = str;
+    currentClientSearch = (str || "").trim();
+    console.log("typed:", str);
+});
+
+// слушаем событие для передачи данных в модалку выдачи сертификата
+// document.addEventListener("clientCreated", (event) => {
+//         const client = event.detail;
+
+//         issueClientSelect.addOption({
+//             value: client.id,
+//             text: client.name
+//         });
+
+//         issueClientSelect.setValue(client.id);
+//     }
+// );
+eventBus.on("client:created", (client) => {
+    issueClientSelect.addOption({
+        value: client.id,
+        text: client.name
+    });
+
+    issueClientSelect.refreshOptions(false);
+    issueClientSelect.setValue(client.id);
+});
+
+eventBus.on("client:open-create", ({ name }) => {
+    openCreateClientModal(name);
+});
+
+// вызов модалки создания клиента внутри модалки выдачи сертификата
+const issueCreateClientBtn = document.getElementById("issueCreateClientBtn");
+
+if (issueCreateClientBtn) {
+    issueCreateClientBtn.addEventListener("click", () => {
+        eventBus.emit("client:open-create", {
+            name: currentClientSearch
+        });
+    });
+}
+
 // функция показа истории транзакций
 export async function openUsageHistory(certId) {
     const response = await fetch(`/certificates/${certId}/usages`);
@@ -66,7 +119,22 @@ if (dom.issuingBtn) {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById("issue_date").value = today;
 
+        // очищаем клиента перед показом окна
+        issueClientSelect.clear();
+        document.getElementById("issue_note").value = "";
+
         dom.issueModal.show();
+        
+        // обработка добавления клиента
+        // issueCreateClientBtn.addEventListener("click", () => {
+        //     prepareCreateClientForm(issueClientSelect.control_input.value);
+
+        //     bootstrap.Modal
+        //         .getOrCreateInstance(
+        //             document.getElementById("createClientModal")
+        //         )
+        //         .show();
+        // });
     });
 }
 
@@ -77,10 +145,16 @@ document.getElementById("issueCertForm").addEventListener("submit", async (e) =>
     const data = {
         cert_id: document.getElementById("issue_cert_id").value,
         issue_date: document.getElementById("issue_date").value,
-        client_id: document.getElementById("issue_client").value,
+        //client_id: document.getElementById("issue_client").value,
+        client_id: issueClientSelect.getValue(),
         place_id: document.getElementById("issue_place").value,
         note: document.getElementById("issue_note").value
     };
+
+    if (!issueClientSelect.getValue()) {
+        alert("Выберите клиента");
+        return;
+    }
 
     const response = await fetch("/certificates/issue", {
         method: "POST",
@@ -166,13 +240,15 @@ if (createForm) {
                 body: formData
             });
 
-            const result = await response.json();
+            //const result = await response.json();
+            const result = await response.json().catch(() => null);
 
             if (!response.ok) {
                 errorBlock.textContent =
                     result.message || "Ошибка создания сертификата";
 
                 errorBlock.classList.remove("d-none");
+                console.error("SERVER ERROR:", result);
                 return;
             }
             sessionStorage.setItem(

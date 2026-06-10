@@ -1,5 +1,5 @@
 # app/routes/clients_routes.py
-from flask import Blueprint, flash, redirect, render_template, current_app, request, url_for
+from flask import Blueprint, flash, redirect, render_template, current_app, request, url_for, jsonify
 from flask_login import login_required
 from app import db
 from app.models import Client, Certificate # Импортируем Certificate для проверки связей
@@ -15,7 +15,7 @@ def list_clients():
         action = request.form.get('action') # Получаем действие из формы
 
         if action == 'create':
-            # Обработка формы создания места
+            # Обработка формы создания клиента
             name = request.form.get('name')
             phone = request.form.get('phone')
             note = request.form.get('note')
@@ -115,3 +115,56 @@ def list_clients():
     # Получаем все места из базы данных
     clients = db.session.execute(db.select(Client)).scalars().all()
     return render_template('settings/clients_list.html', clients=clients)
+
+# маршрут для создания клиентов в любом месте, кроме основной страницы с клиентами
+@clients_bp.route('/api/clients', methods=['POST'])
+@login_required
+def create_client_api():
+
+    data = request.get_json()
+
+    name = (data.get("name") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    note = (data.get("note") or "").strip()
+
+    if not name:
+        return jsonify({
+            "success": False,
+            "message": "Имя клиента обязательно"
+        }), 400
+
+    try:
+        client = Client(
+            name=name,
+            phone=phone or None,
+            note=note or None
+        )
+
+        db.session.add(client)
+        db.session.commit()
+
+        current_app.logger.info(
+            f"Создан клиент через API: {client.name}"
+        )
+
+        return jsonify({
+            "success": True,
+            "client": {
+                "id": client.id,
+                "name": client.name,
+                "phone": client.phone,
+                "note": client.note
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+
+        current_app.logger.error(
+            f"Ошибка создания клиента через API: {e}"
+        )
+
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500

@@ -6,3 +6,5 @@ import "./columnFilters.js";
 import "./filters.js";
 import "./actions.js";
 import "./selection.js";
+
+import "../clients/clients.js";

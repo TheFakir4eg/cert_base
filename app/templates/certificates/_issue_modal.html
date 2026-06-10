@@ -19,11 +19,26 @@
 
           <div class="mb-3">
             <label class="form-label">Клиент</label>
-            <select class="form-select" id="issue_client">
-              {% for client in clients %}
-                <option value="{{ client.id }}">{{ client.name }}</option>
-              {% endfor %}
-            </select>
+            <div class="d-flex gap-2">
+              <select class="form-select" 
+                      id="issue_client"
+                      required>
+                  <option value="">Выберите клиента...</option>
+
+                  {% for client in clients %}
+                      <option value="{{ client.id }}">
+                          {{ client.name }}
+                      </option>
+                  {% endfor %}
+              </select>
+              <button
+                  type="button"
+                  class="btn btn-outline-primary"
+                  id="issueCreateClientBtn"
+                  title="Создать клиента">
+                  <i class="bi bi-plus-lg"></i>
+              </button>
+            </div>
           </div>
 
           <div class="mb-3">
