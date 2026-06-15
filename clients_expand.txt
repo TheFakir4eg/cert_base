@@ -1,0 +1,17 @@
+UPDATE clients 
+SET
+    lastName = SUBSTRING_INDEX(name, ' ', 1),
+    firstName = SUBSTRING_INDEX(SUBSTRING_INDEX(name, ' ', 2), ' ', -1),
+    secondName = CASE
+        WHEN name LIKE '% % %'
+        THEN SUBSTRING_INDEX(name, ' ', -1)
+        ELSE NULL
+    END;
+
+SELECT
+    id,
+    name,
+    lastName,
+    firstName,
+    secondName
+FROM clients;

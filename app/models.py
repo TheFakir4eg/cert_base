@@ -232,12 +232,45 @@ class Client(db.Model):
         db (_type_): _description_
     """
     __tablename__ = 'clients'
+    
     id = db.Column(db.Integer, primary_key=True)
+    
     name = db.Column(db.String(50), nullable=False)
+    
+    lastName = db.Column(db.String(50), nullable=True)
+    firstName = db.Column(db.String(50), nullable=True)
+    secondName = db.Column(db.String(50), nullable=True)
+
     phone = db.Column(db.String(12), nullable=True)
+    email = db.Column(db.String(50), nullable=True)
+    externalId = db.Column(db.String(50), nullable=True)
+    
     note = db.Column(db.String(250), nullable=True)
     
     certificates = db.relationship('Certificate', backref='client', lazy=True)
+    
+    @property
+    def full_name(self):
+        result =  " ".join(
+            filter(
+                None,
+                [self.lastName, self.firstName, self.secondName]
+            )
+        )
+        return result or self.name
+        
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "full_name": self.full_name,
+            "lastName": self.lastName,
+            "firstName": self.firstName,
+            "secondName": self.secondName,
+            "phone": self.phone,
+            "email": self.email,
+            "externalId": self.externalId,
+            "note": self.note,
+        }
     
 class CertificateUsage(db.Model):
     """Операции списания средств с сертификата"""

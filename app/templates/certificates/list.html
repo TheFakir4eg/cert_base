@@ -112,7 +112,7 @@
             {% endif %}
         </ul>
         <!-- Таблица сертификатов -->
-        <div class="table-responsive">
+        <div class="table-responsive table-wrapper">
             <table class="table table-striped table-hover">
                 <thead class="table-dark">
                     <tr>
@@ -274,7 +274,7 @@
                             data-issue-date="{{ cert.issue_date.strftime('%Y-%m-%d') if cert.issue_date else '' }}"
                             data-reason="{{ cert.reason or '' }}"
                             data-client-id="{{ cert.client.id or '' }}"
-                            data-client-name="{{ cert.client.name or '' }}"
+                            data-client-name="{{ cert.client.full_name or '' }}"
                             data-total-amount="{{ cert.total_amount }}"
                             data-place-id="{{ cert.place.id if cert.place else '' }}"
                             data-place-name="{{ cert.place.name if cert.place else '' }}"
@@ -305,7 +305,7 @@
                             <td>{{ cert.create_date.strftime('%d.%m.%Y') if cert.create_date else '' }}</td>
                             <td>{{ cert.issue_date.strftime('%d.%m.%Y') if cert.issue_date else '' }}</td>
                             <td>{{ cert.reason or '' }}</td>
-                            <td>{{ cert.client.name or '' }}</td>
+                            <td>{{ cert.client.full_name or '' }}</td>
                             <td>{{ cert.total_amount | money }}</td>
                             <td>{{ cert.balance | money }}</td>
                             <td>{{ cert.place.name if cert.place else 'Не указано' }}</td>

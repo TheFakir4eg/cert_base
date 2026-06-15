@@ -198,7 +198,7 @@ def issue_certificate():
     data = request.get_json()
 
     cert = Certificate.query.get_or_404(data["cert_id"])
-
+    edit_user_id = int(current_user.id)
     # защита от повторной выдачи
     if cert.client_id:
         return {"error": "Сертификат уже выдан"}, 400
@@ -207,28 +207,12 @@ def issue_certificate():
     cert.issue_date = data["issue_date"]
     cert.place_id = data["place_id"]
     cert.note = data["note"]
-
+    cert.edit_user_id = int(edit_user_id) # в строку "кто изменил" пишем id текущего пользователя
+    
     db.session.commit()
 
     return {"status": "ok"}
 
-# @certificates_bp.route("/certificates/use", methods=["POST"])
-# @login_required
-# def use_certificate_route():
-#     data = request.get_json()
-
-#     try:
-#         use_certificate(
-#             certificate_id=int(data["cert_id"]),
-#             amount=float(data["amount"]),
-#             user_id=current_user.id,
-#             comment=data.get("comment")
-#         )
-
-#         return {"status": "ok"}
-
-#     except CertificateError as e:
-#         return {"error": str(e)}, 400
 
 @certificates_bp.route("/certificates/<int:certificate_id>/spend", methods=["POST"])
 @login_required

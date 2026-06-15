@@ -5,6 +5,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
+        <input type="hidden" id="clientSubmitMode" value="post">
         <h5 class="modal-title" id="createClientModalLabel">Создать клиента</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -12,13 +13,31 @@
             <div class="modal-body">
                 <input type="hidden" name="action" id="clientAction" value="create">
                 <input type="hidden" name="client_id" id="clientId">
+                <div class="mb-3" id="clientFullNameBlock">
+                    <div id="clientFullNameLabel" class="form-control-plaintext"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Фамилия *</label>
+                    <input type="text"
+                        class="form-control"
+                        id="clientLastName"
+                        name="lastName"
+                        required>
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Имя *</label>
                     <input type="text"
                         class="form-control"
-                        id="clientName"
-                        name="name"
+                        id="clientFirstName"
+                        name="firstName"
                         required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Отчество </label>
+                    <input type="text"
+                        class="form-control"
+                        id="clientSecondName"
+                        name="secondName">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">№ телефона</label>
@@ -26,6 +45,20 @@
                         class="form-control"
                         id="clientPhone"
                         name="phone">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">e-mail</label>
+                    <input type="text"
+                        class="form-control"
+                        id="clientEmail"
+                        name="email">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Внешний ID</label>
+                    <input type="text"
+                        class="form-control"
+                        id="clientExternalId"
+                        name="externalId">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Комментарий</label>

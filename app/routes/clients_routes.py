@@ -16,22 +16,33 @@ def list_clients():
 
         if action == 'create':
             # Обработка формы создания клиента
-            name = request.form.get('name')
+            #name = request.form.get('name')
+            #full_name = request.form.get('fullName')
+            full_name = (request.form.get('fullName') or '').strip()
             phone = request.form.get('phone')
             note = request.form.get('note')
 
+            parts = full_name.split()
+            
             # Валидация (минимальная)
-            if name:
+            if full_name:
                 try:
                     val_phone = phone if phone else None
                     val_note = note if note else None
-                    new_client = Client(name=name, phone=val_phone, note=val_note)
+                    new_client = Client(
+                        name=full_name,  # пока оставляем старое поле
+                        lastName=parts[0] if len(parts) > 0 else None,
+                        firstName=parts[1] if len(parts) > 1 else None,
+                        secondName=parts[2] if len(parts) > 2 else None,
+                        phone=val_phone,
+                        note=val_note
+                    )
 
                     db.session.add(new_client)
                     db.session.commit()
 
-                    current_app.logger.info(f"Создан клиент: {new_client.name}")
-                    flash(f'✅ Клиент "{name}" успешно создан!', 'success')
+                    current_app.logger.info(f"Создан клиент: {new_client.full_name}")
+                    flash(f'✅ Клиент "{new_client.full_name}" успешно создан!', 'success')
                 except Exception as e:
                     db.session.rollback()
                     current_app.logger.error(f"Ошибка при создании клиента: {e}")
@@ -55,13 +66,13 @@ def list_clients():
                         ).scalars().all()
 
                         if associated_certificates:
-                            flash(f'❌ Невозможно удалить клиента "{client.name}", так как с ним связаны сертификаты.', 'warning')
+                            flash(f'❌ Невозможно удалить клиента "{client.full_name}", так как с ним связаны сертификаты.', 'warning')
                         else:
                             # Удаляем место
                             db.session.delete(client)
                             db.session.commit()
-                            current_app.logger.info(f"Удален клиент: {client.name}")
-                            flash(f'✅ Клиент "{client.name}" успешно удален!', 'success')
+                            current_app.logger.info(f"Удален клиент: {client.full_name}")
+                            flash(f'✅ Клиент "{client.full_name}" успешно удален!', 'success')
                     else:
                         flash('❌ Клиент не найдено.', 'danger')
 
@@ -78,22 +89,39 @@ def list_clients():
         elif action == 'edit':
             client_id = request.form.get('client_id')
 
-            name = request.form.get('name')
+            #full_name = request.form.get('fullName')
+            full_name = (request.form.get('fullName') or '').strip()
+            if (full_name == ''):
+                full_name = request.form.get('lastName')+' '+request.form.get('firstName')+' '+request.form.get('secondName')
+            lastName = request.form.get('lastName')
+            firstName = request.form.get('firstName')
+            secondName = request.form.get('secondName')
             phone = request.form.get('phone')
+            email = request.form.get('email')
+            externalId = request.form.get('externalId')
             note = request.form.get('note')
 
-            if client_id and name:
+            parts = full_name.split()
+            
+            #if client_id and full_name:
+            if client_id:
                 try:
                     client = db.session.get(Client, int(client_id))
 
                     if client:
-                        client.name = name
+                        client.name = full_name
+                        client.lastName = lastName
+                        client.firstName=firstName if firstName else None
+                        client.secondName=secondName if secondName else None
                         client.phone = phone if phone else None
+                        client.email = email if email else None
+                        client.externalId = externalId if externalId else None
                         client.note = note if note else None
 
                         db.session.commit()
 
-                        flash(f'✅ Клиент "{client.name}" обновлен!', 'success')
+                        flash(f'✅ Клиент "{client.full_name}" обновлен!', 'success')
+                        print(client)
 
                     else:
                         flash('❌ Клиент не найден.', 'danger')
@@ -122,36 +150,59 @@ def list_clients():
 def create_client_api():
 
     data = request.get_json()
-
-    name = (data.get("name") or "").strip()
+    print(data)
+    
+    #full_name = (data.get("fullName") or "").strip()
+    lastName = (data.get("lastName") or "").strip()
+    firstName = (data.get("firstName") or "").strip()
+    secondName = (data.get("secondName") or "").strip()
+    
     phone = (data.get("phone") or "").strip()
+    email = (data.get("email") or "").strip()
+    externalId = (data.get("externalId") or "").strip()
     note = (data.get("note") or "").strip()
 
-    if not name:
+    #parts = full_name.split()
+    
+    if not lastName:
         return jsonify({
             "success": False,
             "message": "Имя клиента обязательно"
         }), 400
 
     try:
-        client = Client(
-            name=name,
-            phone=phone or None,
-            note=note or None
-        )
+        # client = Client(
+        #     name=full_name,
+        #     lastName=parts[0] if len(parts) > 0 else None,
+        #     firstName=parts[1] if len(parts) > 1 else None,
+        #     secondName=parts[2] if len(parts) > 2 else None,
+        #     phone=phone or None,
+        #     note=note or None
+        # )
 
+        client = Client(
+            name = lastName+" "+firstName+" "+secondName,
+            lastName = lastName,
+            firstName = firstName or None,
+            secondName = secondName or None,
+            phone=phone or None,
+            email = email or None,
+            externalId = externalId or None,
+            note = note or None
+        )
+        
         db.session.add(client)
         db.session.commit()
 
         current_app.logger.info(
-            f"Создан клиент через API: {client.name}"
+            f"Создан клиент через API: {client.full_name}"
         )
 
         return jsonify({
             "success": True,
             "client": {
                 "id": client.id,
-                "name": client.name,
+                "name": client.full_name,
                 "phone": client.phone,
                 "note": client.note
             }
