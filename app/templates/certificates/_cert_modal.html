@@ -64,9 +64,13 @@
 
               <div class="mb-3">
                   <label class="form-label">Комментарий</label>
-                  <input type="text" class="form-control"
-                         name="note"
-                         value="{{ cert.note if cert else '' }}">
+                  <textarea
+                      class="form-control form-comment-auto"
+                      id="clientNote"
+                      name="note"
+                      value="{{ cert.note if cert else '' }}"
+                      maxlength="250">
+                  </textarea>
               </div>
 
           </div>

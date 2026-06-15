@@ -100,4 +100,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // Инициализируем обработчики для модального окна подтверждения
     setupConfirmModal();
+
+    document.addEventListener("input", (e) => {
+        if (!e.target.classList.contains("form-comment-auto")) return;
+
+        e.target.style.height = "auto";
+        e.target.style.height = `${e.target.scrollHeight}px`;
+    });
 });

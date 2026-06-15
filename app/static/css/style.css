@@ -236,3 +236,14 @@ body {
 .icon-btn-ghost:active {
     transform: scale(0.95);
 }
+
+/* .form-comment {
+    min-height: 80px;
+    resize: vertical;
+} */
+
+.form-comment-auto {
+    min-height: 80px;
+    resize: none;
+    overflow: hidden;
+}
