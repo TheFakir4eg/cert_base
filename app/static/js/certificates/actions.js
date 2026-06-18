@@ -2,10 +2,11 @@
 
 import * as dom from "./dom.js";
 import { state } from "./state.js";
-import { money, showFlash } from "../utils.js";
+import { money, showFlash, setupModalReset, setupBulkFields } from "../utils.js";
 //import { prepareCreateClientForm } from "../clients/modal.js";
 import { eventBus } from "../core/eventBus.js";
 import { openCreateClientModal } from "../clients/modal.js";
+import { initExpirationType } from "./form.js";
 
 const issueClientSelect = new TomSelect("#issue_client", {
     create: false,
@@ -87,24 +88,54 @@ export async function openUsageHistory(certId) {
 // работа кнопки "Изменить"
 if (dom.editingBtn) {
     dom.editingBtn.addEventListener("click", () => {
-
-        if (!state.selectedRow) return;
-
         const modalElement = document.getElementById("editCertModal");
         const modal = new bootstrap.Modal(modalElement);
-
-        // ищем поля ТОЛЬКО внутри edit modal
         const form = modalElement.querySelector("form");
 
+        const updateExpirationUI = initExpirationType(form);
+        if (!state.selectedRow) return;
+
+        //console.log(state.selectedRow.dataset);
+
+        const expirationType = form.querySelector("[name=expiration_type]");
+        const expirationDate = form.querySelector("[name=expiration_date]");
+        
         form.querySelector("[name=cert_id]").value = state.selectedRow.dataset.id;
         form.querySelector("[name=reason]").value = state.selectedRow.dataset.reason;
         form.querySelector("[name=series]").value = state.selectedRow.dataset.series;
         form.querySelector("[name=number]").value = state.selectedRow.dataset.number;
+
+        form.querySelector("[name=place_id]").value = state.selectedRow.dataset.placeId;
+        form.querySelector("[name=issue_place_id]").value = state.selectedRow.dataset.issuePlaceId;
+
+        form.querySelector("[name=mol_id]").value = state.selectedRow.dataset.molId;
+        
+
+        form.querySelector("[name=is_single_use]").checked = state.selectedRow.dataset.isSingleUse === "True";
+        form.querySelector("[name=require_original]").checked = state.selectedRow.dataset.requireOriginal === "True";
+        form.querySelector("[name=require_stamp]").checked = state.selectedRow.dataset.requireStamp === "True";
+        form.querySelector("[name=max_50_percent]").checked = state.selectedRow.dataset.maxPercent === "True";
+
         form.querySelector("[name=total_amount]").value = state.selectedRow.dataset.totalAmount;
         form.querySelector("[name=servicegroup_id]").value = state.selectedRow.dataset.servicegroupId;
         form.querySelector("[name=note]").value = state.selectedRow.dataset.note;
 
+        if (state.selectedRow.dataset.expirationDate) {
+            expirationType.value = "date";
+            expirationDate.value =
+                state.selectedRow.dataset.expirationDate;
+        } else {
+            expirationType.value = "unlimited";
+        }
+
+        updateExpirationUI();
+
+        //console.log(expirationType.value);
+        //console.log(expirationDate.value);
+        console.log(form.querySelector("#expirationDateBlock"));
+
         modal.show();
+        
     });
 }
 
@@ -125,16 +156,7 @@ if (dom.issuingBtn) {
 
         dom.issueModal.show();
         
-        // обработка добавления клиента
-        // issueCreateClientBtn.addEventListener("click", () => {
-        //     prepareCreateClientForm(issueClientSelect.control_input.value);
 
-        //     bootstrap.Modal
-        //         .getOrCreateInstance(
-        //             document.getElementById("createClientModal")
-        //         )
-        //         .show();
-        // });
     });
 }
 
@@ -220,9 +242,16 @@ if (dom.restoreBtn) {
     });
 }
 
+// создание сертификата
 const createForm = document.getElementById("createCertForm");
 
 if (createForm) {
+    setupModalReset(
+        "createCertModal",
+        "createCertForm",
+        "createCertError"
+    );
+    setupBulkFields();
     createForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
@@ -233,6 +262,31 @@ if (createForm) {
         errorBlock.textContent = "";
 
         const formData = new FormData(createForm);
+        const series = createForm.elements["series"].value.trim();
+        const amount = createForm.elements["total_amount"].value.trim();
+
+        const numbers = series.match(/\d+/g);
+        const seriesAmount = numbers?.at(-1);
+
+        // ---- отладочный блок
+        for (const [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
+        // ---------
+        if (!Number.isFinite(Number(amount))) {
+            errorBlock.textContent =
+                "Номинал должен содержать только цифры";
+
+            errorBlock.classList.remove("d-none");
+            return;
+        }
+        if (seriesAmount && Number(seriesAmount) !== Number(amount)) {
+            errorBlock.textContent =
+                `Номинал в серии (${seriesAmount}) не соответствует полю "Номинал" (${amount})`;
+
+            errorBlock.classList.remove("d-none");
+            return;
+        }
 
         try {
             const response = await fetch("/certificates", {
@@ -262,6 +316,88 @@ if (createForm) {
             // }, 1000);
 
             
+
+        } catch (error) {
+            errorBlock.textContent =
+                "Ошибка соединения с сервером";
+
+            errorBlock.classList.remove("d-none");
+        }
+    });
+    
+}
+
+const editForm = document.getElementById("editCertForm");
+
+if (editForm) {
+    setupModalReset(
+        "editCertModal",
+        "editCertForm",
+        "editCertError"
+    );
+
+    editForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const errorBlock =
+            document.getElementById("editCertError");
+
+        errorBlock.classList.add("d-none");
+        errorBlock.textContent = "";
+
+        const formData = new FormData(editForm);
+
+        const series = editForm.elements["series"].value.trim();
+
+        const amount = editForm.elements["total_amount"].value.trim();
+
+        const numbers = series.match(/\d+/g);
+        const seriesAmount = numbers?.at(-1);
+
+        if (!Number.isFinite(Number(amount))) {
+            errorBlock.textContent =
+                "Номинал должен содержать только цифры";
+
+            errorBlock.classList.remove("d-none");
+            return;
+        }
+        if (
+            seriesAmount &&
+            Number(seriesAmount) !== Number(amount)
+        ) {
+            errorBlock.textContent =
+                `Номинал в серии (${seriesAmount}) не соответствует полю "Номинал" (${amount})`;
+
+            errorBlock.classList.remove("d-none");
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                "/certificates",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+            const result = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                errorBlock.textContent =
+                    result.message ||
+                    "Ошибка изменения сертификата";
+
+                errorBlock.classList.remove("d-none");
+                return;
+            }
+
+            sessionStorage.setItem(
+                "flashSuccess",
+                result.message
+            );
+
+            location.reload();
 
         } catch (error) {
             errorBlock.textContent =

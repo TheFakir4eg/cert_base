@@ -14,3 +14,5 @@ class Config:
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    MAX_BULK = 500

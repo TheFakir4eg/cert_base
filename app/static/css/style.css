@@ -12,9 +12,19 @@ body {
     background-color: #e9ecef;
     font-weight: bold;
 }
-.form-control, .form-select {
+/* .form-control, .form-select {
+    max-width: 400px;
+} */
+
+.cert-top-row .form-control,
+.cert-top-row .form-select,
+.cert-middle-row .form-control,
+.cert-middle-row .form-select,
+.cert-bottom-row .form-control,
+.cert-bottom-row .form-select {
     max-width: 400px;
 }
+
 .char-input {
     border: 1px solid #ced4da;
     border-radius: 4px;
@@ -246,4 +256,85 @@ body {
     min-height: 80px;
     resize: none;
     overflow: hidden;
+}
+
+/* ===== Модалка создания сертификата ===== */
+.cert-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.cert-top-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+}
+
+.cert-middle-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+}
+
+.cert-conditions {
+    border: 1px solid #dee2e6;
+    border-radius: .375rem;
+    padding: .75rem 1rem;
+}
+
+.cert-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.cert-preview {
+    min-height: 180px;
+    border: 1px dashed #ced4da;
+    border-radius: .375rem;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #6c757d;
+}
+
+/* .cert-bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1rem;
+} */
+ .cert-bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    align-items: start;
+    gap: 1rem;
+}
+.cert-bottom-row textarea {
+    min-height: 62px;
+}
+
+.cert-comment-row textarea {
+    width: 100%;
+    min-height: 80px;
+}
+.bulk-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: auto;
+}
+
+/* #bulkFirstNumberBlock,
+#bulkLastNumberBlock {
+    width: 120px;
+} */
+#bulkFirstNumberBlock,
+#bulkLastNumberBlock {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 90px
 }

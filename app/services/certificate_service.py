@@ -5,7 +5,7 @@ from decimal import Decimal
 from app import db
 from app.models import Certificate, CertificateUsage
 from sqlalchemy import func
-
+import re
 
 class CertificateError(Exception):
     pass
@@ -81,6 +81,28 @@ def get_certificate_usages(certificate_id: int):
 
     return result
 
+def validate_certificate_series(series: str, total_amount) -> str | None:
+    """
+    Возвращает текст ошибки или None.
+    """
+
+    numbers = re.findall(r"\d+", series or "")
+
+    if not numbers:
+        return (
+            "Серия должна содержать номинал "
+            "(например: ДОНПОД1000)"
+        )
+
+    series_amount = int(numbers[-1])
+
+    if series_amount != Decimal(total_amount):
+        return (
+            f"Номинал в серии ({series_amount}) "
+            f"не соответствует номиналу сертификата ({total_amount})"
+        )
+
+    return None
 # def use_certificate(*, certificate_id: int, amount: float, user_id: int, comment: str = None):
 #     """
 #     Списание средств с сертификата

@@ -11,8 +11,8 @@
             id="{{ action }}CertForm">
           <div class="modal-body">
               <div
-                  id="createCertError"
-                  class="alert alert-danger d-none">
+                id="{{ action }}CertError"
+                class="alert alert-danger d-none">
               </div>
               <!-- действие create / edit -->
               <input type="hidden" name="action" value="{{ action }}">
@@ -43,8 +43,12 @@
 
               <div class="mb-3">
                   <label class="form-label">Номинал *</label>
-                  <input type="text" class="form-control"
+                  <input type="number"
+                         class="form-control"
                          name="total_amount"
+                         min="1"
+                         step="1"
+                         inputmode="numeric"
                          value="{{ cert.total_amount if cert else '' }}"
                          required>
               </div>

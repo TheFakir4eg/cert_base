@@ -2,6 +2,7 @@
 
 // import { state } from "./state.js";
 // import * as dom from "./dom.js";
+import { initExpirationType } from "./form.js";
 import {
     applyFilter,
     getCurrentFilter
@@ -10,7 +11,11 @@ import { showFlash } from "../utils.js";
 
 
 document.addEventListener("DOMContentLoaded", () => {
+    const createForm = document.querySelector("#createCertModal form");
 
+    if (createForm) {
+        initExpirationType(createForm);
+    }
     const message = sessionStorage.getItem("flashSuccess");
 
     if (message) {

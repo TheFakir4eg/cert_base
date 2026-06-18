@@ -1,0 +1,262 @@
+<!-- /app/templates/certificates/_cert_modal_new.html -->
+<div class="modal fade" id="{{ modal_id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ modal_title }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="POST"
+            id="{{ action }}CertForm">
+            <div class="modal-body cert-form">
+
+                <div id="{{ action }}CertError" class="alert alert-danger d-none"></div>
+
+                <input type="hidden" name="action" id="certFormAction" value="{{ action }}">
+                <input type="hidden" name="cert_id" value="{{ cert.id if cert else '' }}">
+
+                <!-- Верхняя строка -->
+                <div class="cert-top-row">
+
+                    <div>
+                        <label class="form-label">Серия *</label>
+                        <input type="text"
+                            class="form-control"
+                            name="series"
+                            value="{{ cert.series if cert else '' }}"
+                            required>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Номер *</label>
+                        <input type="text"
+                            class="form-control"
+                            name="number"
+                            id="input_number"
+                            value="{{ cert.number if cert else '' }}"
+                            required>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Номинал *</label>
+                        <input type="number"
+                            class="form-control"
+                            name="total_amount"
+                            min="1"
+                            step="1"
+                            inputmode="numeric"
+                            value="{{ cert.total_amount if cert else '' }}"
+                            required>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Срок действия</label>
+                        <select id="expirationType" class="form-select" name="expiration_type">
+                                <option value="unlimited">Неограниченный</option>
+                                <option value="date">До указанной даты</option>
+                                <option value="months">На указанный срок</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Тип списания</label>
+                        <select class="form-select" name="spending_type">
+                            <option value="money">Классический</option>
+                            <option value="count">На услуги поштучно</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- Средний блок -->
+                <div class="cert-middle-row">
+
+                    <fieldset class="cert-conditions">
+                        <legend>Условия</legend>
+
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                name="require_original"
+                                {% if cert and cert.require_original %}checked{% endif %}>
+
+                            <label class="form-check-label">
+                                Требуется оригинал сертификата
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                name="require_stamp"
+                                {% if cert and cert.require_stamp %}checked{% endif %}>
+
+                            <label class="form-check-label">
+                                Требуется печать организации
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <input 
+                                class="form-check-input" 
+                                type="checkbox"
+                                name="is_single_use"
+                                {% if cert and cert.is_single_use %}checked{% endif %}>
+                            <label class="form-check-label">
+                                Изымаемый (гашение при первом использовании)
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <input 
+                                class="form-check-input" 
+                                type="checkbox"
+                                name="max_50_percent"
+                                {% if cert and cert.max_50_percent %}checked{% endif %}>
+                            <label class="form-check-label">
+                                Не более 50% от стоимости услуги
+                            </label>
+                        </div>
+
+                    </fieldset>
+
+                    <div class="cert-options">
+
+                        <div id="expirationDateBlock" class="d-none">
+                            <label class="form-label">Дата окончания</label>
+                            <input
+                                type="date"
+                                class="form-control"
+                                name="expiration_date">
+                        </div>
+
+                        <div id="expirationMonthsBlock" class="d-none">
+                            <label class="form-label">Срок действия (месяцев)</label>
+                            <input
+                                type="number"
+                                class="form-control"
+                                name="expiration_months"
+                                min="1"
+                                max="120">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Группа услуг</label>
+                            <select class="form-select" name="servicegroup_id">
+                                <option value="">Не выбрано</option>
+                                {% for sg in servicegroups %}
+                                <option value="{{ sg.id }}"
+                                        {% if cert and cert.servicegroup_id == sg.id %}selected{% endif %}>
+                                    {{ sg.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- Макет -->
+                <div class="cert-preview">
+                    Здесь будет визуальный макет сертификата
+                </div>
+
+                <!-- Низ -->
+                <div class="cert-bottom-row">
+
+                    <div>
+                        <label class="form-label">Причина</label>
+                        <input type="text"
+                            class="form-control"
+                            name="reason"
+                            value="{{ cert.reason if cert else '' }}">
+                    </div>
+
+                    
+                    <div>
+                        <label class="form-label">Место хранения</label>
+                        <select 
+                            class="form-select" 
+                            id="create_place"
+                            name="place_id">
+                        {% for place in places %}
+                            <option value="{{ place.id }}">{{ place.name }}</option>
+                        {% endfor %}
+                        </select>
+                    </div>
+                    {% if action == 'edit' %}
+                    <div>
+                        <label class="form-label">Место выдачи</label>
+                        <select 
+                            class="form-select" 
+                            id="issue_place"
+                            name="issue_place_id">
+                        {% for place in places %}
+                            <option value="{{ place.id }}">{{ place.name }}</option>
+                        {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <label class="form-label">МОЛ</label>
+                        <select class="form-select" name="mol_id">
+                            <option value="">Не выбрано</option>
+                            {% for mol in users %}
+                            <option value="{{ mol.id }}"
+                                    {% if cert and cert.mol_id == mol.id %}selected{% endif %}>
+                                {{ mol.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+
+                </div>
+                <div class="cert-comment-row">
+                    <label class="form-label">Комментарий</label>
+                    <textarea class="form-control form-comment-auto"
+                            name="note"
+                            maxlength="250">{{ cert.note if cert else '' }}</textarea>
+                </div>
+
+            </div>
+
+          <div class="modal-footer">
+            {% if action == 'create' %}
+            <div class="bulk-container">
+                <label class="bulk-check">
+                    <input
+                        type="checkbox"
+                        name="mass_bulk"
+                        id="mass_bulk">
+                    Массовое заведение
+                </label>
+
+                <div id="bulkFirstNumberBlock">
+                    <span>От</span>
+                    <input
+                        type="number"
+                        class="form-control form-control-sm"
+                        name="first_number">
+                </div>
+
+                <div id="bulkLastNumberBlock">
+                    <span>До</span>
+                    <input
+                        type="number"
+                        class="form-control form-control-sm"
+                        name="last_number">
+                </div>
+            </div>
+            {% endif %}
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            <button type="submit" class="btn btn-primary">{{ submit_text }}</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>

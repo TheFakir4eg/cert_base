@@ -27,27 +27,37 @@ class Certificate(db.Model): # Модель для таблицы certificates
     id = db.Column(db.Integer, primary_key=True)
     # создание сертификата
     create_date = db.Column(db.DateTime, default=lambda: datetime.now()) # Дата создания. Записывается в бд автоматически. 
-    reason = db.Column(db.String(20), nullable=True) # Причина создания сертификата
+    reason = db.Column(db.String(100), nullable=True) # Причина создания сертификата
     series = db.Column(db.String(20), nullable=False) # серия сертификата 
     number = db.Column(db.String(20), nullable=False) # номер сертификата
 
     place_id = db.Column(db.Integer, db.ForeignKey('places.id'), nullable=True) # Внешний ключ, место создания сетрификата
+    issue_place_id = db.Column(db.Integer, db.ForeignKey('places.id'), nullable=True) # Внешний ключ, место выдачи сертификата
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) # Внешний ключ, пользователь, создавший сертификат
+    mol_id = db.Column(db.Integer,db.ForeignKey("users.id"), nullable=True) # Внешний ключ, МОЛ - материально ответственное лицо - кому передали сертификат при создании
+    expiration_date = db.Column(db.Date, nullable=True) # Срок действия сертификата
     servicegroup_id = db.Column(db.Integer, db.ForeignKey('servicegroup.id'), nullable=True) # Внешний ключ, группа услуг
     # выдача клиенту
     issue_date = db.Column(db.Date) # Дата выдачи сертификата клиенту
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=True) # Внешний ключ, держатель сертификата (клиент, которому его выдали)
+    spending_client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=True) # Внешний ключ, клиент, который расплачивается сертификатом
     #редактирование
     edit_date = db.Column(db.DateTime, default=lambda: datetime.now(), onupdate=datetime.now()) # Дата изменения. Записывается в бд автоматически. 
     edit_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Внешний ключ, пользователь, изменивший сертификат. Может отличаться от создателя
     # финансы
-    #total_amount = db.Column(db.String(20), nullable=False) # номинал сертификата !!! Исправить на Integer
     total_amount = db.Column(Numeric(10,2), nullable=False)
-    #expired_amount = db.Column(db.String(20), nullable=False) # остаток сертификата, изначально равен номиналу. !!! Исправить на Integer(string нельзя складывать)
-    # expired_amount = db.Column(Numeric(10,2), nullable=False)
-    note = db.Column(db.String(250), nullable=True)
-    # показатель активности (для вывода из оборота)
-    active = db.Column(db.Boolean, default=True, nullable=False)
+    spending_type = db.Column(db.String(20),nullable=False,default='money') # money / count - тип списания
+    
+    note = db.Column(db.String(250), nullable=True) # Комментарий
+    template_path = db.Column(db.String(255), nullable=True) # Путь к файлу шаблона сертификата
+    require_original = db.Column(db.Boolean,default=False,nullable=False)
+    require_stamp = db.Column(db.Boolean,default=False,nullable=False)
+    is_single_use = db.Column(db.Boolean,default=False,nullable=False)
+    max_50_percent = db.Column(db.Boolean,default=False,nullable=False)
+    
+    active = db.Column(db.Boolean, default=True, nullable=False) # показатель активности (для вывода из оборота)
+    deactivate_reason = db.Column(db.String(100),nullable=True) # Причина деактивации
+    
     # Отношения между таблицами
     
     # кто создал сертификат
@@ -62,7 +72,36 @@ class Certificate(db.Model): # Модель для таблицы certificates
         foreign_keys=[edit_user_id],
         backref='edited_certificates'
     )
-
+    # МОЛ - материально ответственное лицо
+    mol = db.relationship(
+        'User',
+        foreign_keys=[mol_id],
+        backref='received_certificates'
+    )
+    # держатель сертификата
+    holder = db.relationship(
+        "Client",
+        foreign_keys=[client_id],
+        back_populates="held_certificates"
+    )
+    # Плательщик
+    spender = db.relationship(
+        "Client",
+        foreign_keys=[spending_client_id],
+        back_populates="spent_certificates"
+    )
+    # Место создания 
+    creating_place = db.relationship(
+        "Place",
+        foreign_keys=[place_id],
+        back_populates="created_certificates"
+    )
+    # Место выдачи
+    issuing_place = db.relationship(
+        "Place",
+        foreign_keys=[issue_place_id],
+        back_populates="issued_certificates"
+    )
     # сумма списаний
     # !!! потенциально опасное место
     # при большом количестве сертификатов есть риск замедления работы
@@ -202,7 +241,18 @@ class Place(db.Model): # Модель для таблицы places
     # Отношение "один ко многим": одно место может иметь много сертификатов
     # backref автоматически создает атрибут 'place' в модели Certificate,
     # позволяющий получить объект Place для конкретного Certificate
-    certificates = db.relationship('Certificate', backref='place', lazy=True)
+    #certificates = db.relationship('Certificate', backref='place', lazy=True)
+    
+    created_certificates = db.relationship(
+        "Certificate",
+        foreign_keys="Certificate.place_id",
+        back_populates="creating_place"
+    )
+    issued_certificates = db.relationship(
+        "Certificate",
+        foreign_keys="Certificate.issue_place_id",
+        back_populates="issuing_place"
+    )
 
     def __repr__(self):
         return f'<Place {self.name}>'
@@ -247,7 +297,18 @@ class Client(db.Model):
     
     note = db.Column(db.String(250), nullable=True)
     
-    certificates = db.relationship('Certificate', backref='client', lazy=True)
+    #certificates = db.relationship('Certificate', backref='client', lazy=True)
+    held_certificates = db.relationship(
+        "Certificate",
+        foreign_keys="Certificate.client_id",
+        back_populates="holder"
+    )
+
+    spent_certificates = db.relationship(
+        "Certificate",
+        foreign_keys="Certificate.spending_client_id",
+        back_populates="spender"
+    )
     
     @property
     def full_name(self):
