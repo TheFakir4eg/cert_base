@@ -56,7 +56,15 @@ def spend_certificate(certificate_id: int, amount, user_id: int, comment: str | 
 
     db.session.add(usage)
 
-    # 4. Коммит — атомарность операции
+    # записываем usage в БД, но без commit
+    db.session.flush()
+    #new_balance = certificate.balance
+    # 4. Автоматически выводим из оборота
+    if certificate.balance == 0:
+        certificate.active = False
+        certificate.edit_user_id = user_id
+
+    # 5. Коммит — атомарность операции
     db.session.commit()
 
     return usage

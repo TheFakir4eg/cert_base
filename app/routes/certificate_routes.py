@@ -394,46 +394,6 @@ def list_certificates():
                     "success": False,
                     "message": str(e)
                 }), 500
-
-            # return redirect(url_for('certificates.list_certificates'))
-        # elif action == 'edit':
-        #     cert_id_str = request.form.get('cert_id')
-
-        #     if not cert_id_str:
-        #         flash('❌ Не выбран сертификат для редактирования.', 'danger')
-        #         return redirect(url_for('certificates.list_certificates'))
-
-        #     cert = db.session.get(Certificate, int(cert_id_str))
-        #     edit_user_id = int(current_user.id)
-        #     if not cert:
-        #         flash('❌ Сертификат не найден.', 'danger')
-        #         return redirect(url_for('certificates.list_certificates'))
-
-        #     try:
-        #         from datetime import datetime
-
-        #         cert.reason = request.form.get('reason')
-        #         cert.series = request.form.get('series')
-        #         cert.number = request.form.get('number')
-        #         cert.total_amount = request.form.get('total_amount')
-        #         cert.note = request.form.get('note')
-
-        #         # --- ID связи ---
-        #         servicegroup_id_str = request.form.get('servicegroup_id')
-        #         cert.servicegroup_id = int(servicegroup_id_str) if servicegroup_id_str else None
-        #         cert.edit_user_id = int(edit_user_id) # в строку "кто изменил" пишем id того текущего пользователя
-
-        #         db.session.commit()
-
-        #         current_app.logger.info(f"Обновлён сертификат ID={cert.id}")
-        #         flash('✅ Сертификат успешно обновлён!', 'success')
-
-        #     except Exception as e:
-        #         db.session.rollback()
-        #         current_app.logger.error(f"Ошибка обновления сертификата: {e}")
-        #         flash(f'❌ Ошибка обновления сертификата: {str(e)}', 'danger')
-
-        #     return redirect(url_for('certificates.list_certificates'))
         
     # Получаем все сертификаты из базы данных
     certificates = db.session.execute(db.select(Certificate)).scalars().all()
@@ -489,7 +449,7 @@ def spend_certificate_route(certificate_id):
     comment = data.get("comment")
 
     try:
-        usage = spend_certificate(
+        spend_certificate(
             certificate_id=certificate_id,
             amount=amount,
             user_id=current_user.id,
@@ -531,7 +491,7 @@ def get_certificate_usages(certificate_id):
 
     return jsonify(result)
 
-@certificates_bp.route("/certificates/<int:certificate_id>/close", methods=["POST"])
+@certificates_bp.post("/certificates/<int:certificate_id>/close")
 @login_required
 def close_certificate(certificate_id):
 
@@ -540,15 +500,21 @@ def close_certificate(certificate_id):
     if not cert:
         return jsonify({"error": "Not found"}), 404
 
-    if cert.balance > 0:
-        return jsonify({"error": "Нельзя закрыть сертификат с остатком"}), 400
+    had_balance = cert.balance > 0
 
     cert.active = False
     cert.edit_user_id = current_user.id
 
     db.session.commit()
 
-    return jsonify({"success": True})
+    return jsonify({
+        "success": True,
+        "message": (
+            "Погашен сертификат с положительным балансом"
+            if had_balance
+            else "Сертификат успешно выведен"
+        )
+    })
 
 @certificates_bp.route("/certificates/<int:certificate_id>/restore", methods=["POST"])
 @login_required

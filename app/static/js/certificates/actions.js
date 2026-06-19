@@ -8,6 +8,10 @@ import { eventBus } from "../core/eventBus.js";
 import { openCreateClientModal } from "../clients/modal.js";
 import { initExpirationType } from "./form.js";
 
+const confirmModal = new bootstrap.Modal(document.getElementById("confirmActionModal"));
+const confirmText = document.getElementById("confirmActionModalText");
+const confirmBtn = document.getElementById("confirmActionModalBtn");
+
 const issueClientSelect = new TomSelect("#issue_client", {
     create: false,
     placeholder: "Начните вводить клиента..."
@@ -199,23 +203,78 @@ if (dom.spendBtn) {
     });
 }
 
+const spendForm = document.getElementById("spendCertForm");
+
+if (spendForm) {
+    // защита от двойного списания и одновременного использования сертификата 
+    let spendInProgress = false;
+    //console.log("SPEND HANDLER ATTACHED");
+    spendForm.addEventListener("submit", async (e) => {
+        //console.log("SUBMIT EVENT", Date.now());
+        e.preventDefault();
+
+        if (spendInProgress) {
+            return;
+        }
+        spendInProgress = true;
+        try {
+            const certId = document.getElementById("spend_cert_id").value;
+
+            const data = {
+                amount: document.getElementById("spend_amount").value,
+                comment: document.getElementById("spend_comment").value
+            };
+
+            const response = await fetch(`/certificates/${certId}/spend`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                //console.log("SPEND SUBMIT");
+                alert("Баланс сертификата = 0 \nСертификат автоматически выведен из оборота")
+                location.reload();
+            } else {
+                alert(result.message);
+            }
+        } finally { spendInProgress = false; }
+        
+    });
+}
+
+
+
 // работа кнопки "Вывод"
 if (dom.closingBtn) {
     dom.closingBtn.addEventListener("click", async () => {
         if (!state.selectedRow) return;
-        const certId = state.selectedRow.dataset.id;
-        const response = await fetch(`/certificates/${certId}/close`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" }
-        });
 
-        const result = await response.json();
-        if (response.ok) {
-            showFlash("Сертификат успешно выведен", "success");
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            alert(result.error || "Ошибка");
+        const certId = state.selectedRow.dataset.id;
+
+        const balance = Number(
+            state.selectedRow.dataset.balance
+        );
+
+        if (balance > 0) {
+
+            confirmText.textContent =
+                `На сертификате остался баланс ${balance}. Вы уверены, что хотите вывести его из оборота?`;
+
+            confirmBtn.onclick = async () => {
+
+                confirmModal.hide();
+
+                await closeCertificate(certId);
+            };
+
+            confirmModal.show();
+            return;
         }
+
+        await closeCertificate(certId);
     });
 }
 
@@ -406,4 +465,29 @@ if (editForm) {
             errorBlock.classList.remove("d-none");
         }
     });
+}
+
+async function closeCertificate(certId) {
+    const response = await fetch(
+        `/certificates/${certId}/close`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }
+    );
+
+    const result = await response.json();
+
+    if (response.ok) {
+        showFlash(
+            result.message || "Сертификат успешно выведен",
+            "success"
+        );
+
+        setTimeout(() => location.reload(), 1500);
+    } else {
+        alert(result.error || "Ошибка");
+    }
 }

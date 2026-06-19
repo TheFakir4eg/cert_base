@@ -50,32 +50,5 @@ document.addEventListener("DOMContentLoaded", () => {
         applyFilter(activeTab.dataset.filter);
     }
 
-    const spendForm = document.getElementById("spendCertForm");
-
-    if (!spendForm) return;
-
-    spendForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const certId = document.getElementById("spend_cert_id").value;
-
-        const data = {
-            amount: document.getElementById("spend_amount").value,
-            comment: document.getElementById("spend_comment").value
-        };
-
-        const response = await fetch(`/certificates/${certId}/spend`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            location.reload();
-        } else {
-            alert(result.message);
-        }
-    });
+    
 });

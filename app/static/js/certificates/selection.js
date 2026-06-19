@@ -45,7 +45,10 @@ function selectRow(row) {
     }
 
     if (dom.closingBtn) {
-        dom.closingBtn.disabled = !active || balance > 0;
+        //dom.closingBtn.disabled = !active || balance > 0;
+        // UPD 19.06.2026
+        // Можно вывести из оборота сертификаты с положительным балансом
+        dom.closingBtn.disabled = !active;
     }
 
     if (dom.restoreBtn) {
