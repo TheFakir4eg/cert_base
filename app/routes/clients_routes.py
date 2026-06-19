@@ -3,6 +3,7 @@ from flask import Blueprint, flash, redirect, render_template, current_app, requ
 from flask_login import login_required
 from app import db
 from app.models import Client, Certificate # Импортируем Certificate для проверки связей
+import re
 
 clients_bp = Blueprint('clients', __name__)
 
@@ -22,6 +23,11 @@ def list_clients():
             phone = request.form.get('phone')
             note = request.form.get('note')
 
+            # нормализация
+            phone = re.sub(r"\D", "", phone)
+            if phone.startswith("8"):
+                phone = "7" + phone[1:]
+                
             parts = full_name.split()
             
             # Валидация (минимальная)
@@ -101,6 +107,11 @@ def list_clients():
             externalId = request.form.get('externalId')
             note = request.form.get('note')
 
+            # нормализация
+            phone = re.sub(r"\D", "", phone)
+            if phone.startswith("8"):
+                phone = "7" + phone[1:]
+                
             parts = full_name.split()
             
             #if client_id and full_name:
@@ -162,6 +173,10 @@ def create_client_api():
     externalId = (data.get("externalId") or "").strip()
     note = (data.get("note") or "").strip()
 
+    # нормализация
+    phone = re.sub(r"\D", "", phone)
+    if phone.startswith("8"):
+        phone = "7" + phone[1:]
     #parts = full_name.split()
     
     if not lastName:

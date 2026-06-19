@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const nameInput = document.getElementById('name');
     const passwordInput = document.getElementById('password');
     const groupIdSelect = document.getElementById('group_id');
+    const placeIdSelect = document.getElementById('working_place');
     const activeCheckbox = document.getElementById('active');
     const modalTitle = document.getElementById('createUserModalLabel');
     const submitBtn = document.getElementById('submitBtn');
@@ -26,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const login = this.getAttribute('data-login');
             const name = this.getAttribute('data-name');
             const groupId = this.getAttribute('data-group-id');
+            const placeId = this.getAttribute('data-place-id');
             const isActive = this.getAttribute('data-active') === 'true';
 
             // Заполняем форму данными пользователя
@@ -34,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
             nameInput.value = name;
             passwordInput.value = ''; // Не заполняем пароль при редактировании
             groupIdSelect.value = groupId; // Выбираем нужную группу
+            placeIdSelect.value = placeId; 
             activeCheckbox.checked = isActive; // Устанавливаем чекбокс активности
 
             // Меняем состояние формы на "редактирование"
@@ -70,5 +73,11 @@ document.addEventListener('DOMContentLoaded', function() {
         closeModalBtn.style.display = 'inline-block';
         cancelEditBtn.style.display = 'none';
         // Не трогаем пароль, так как при создании он всегда required
+        // Bootstrap 5.3 + Chrome fix
+        modal.addEventListener("hide.bs.modal", () => {
+            if (modal.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
+        });
     }
 });

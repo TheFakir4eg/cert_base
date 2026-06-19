@@ -132,10 +132,11 @@ class User(db.Model, UserMixin):
     """
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    login = db.Column(db.String(50), nullable=False) # логин пользователя
+    login = db.Column(db.String(50), nullable=False, unique=True) # логин пользователя
     name = db.Column(db.String(50), nullable=False) # данные ФИО
     password_hash = db.Column(db.String(255)) # поле для хеша пароля
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True) # Внешний ключ, группы прав пользователя
+    place_id = db.Column(db.Integer, db.ForeignKey('places.id'), nullable=True) # Внешний ключ, место работы пользователя
     note = db.Column(db.String(250), nullable=True)
     create_date = db.Column(db.DateTime, default=lambda: datetime.now())
     active = db.Column(db.Boolean, default=True, nullable=False) # статус активности учетной записи
@@ -143,6 +144,7 @@ class User(db.Model, UserMixin):
     # Отношение "многие к одному": многие пользователи принадлежат одной группе
     # используем back_populates='users', которое ссылается на атрибут в Group
     user_group = db.relationship('Group', back_populates='users') 
+    user_place = db.relationship('Place', back_populates='users') 
     
     # Метод для установки пароля (хранится как хеш)
     def set_password(self, password):
@@ -254,6 +256,10 @@ class Place(db.Model): # Модель для таблицы places
         back_populates="issuing_place"
     )
 
+    users = db.relationship(
+        'User',
+        back_populates='user_place'
+    )
     def __repr__(self):
         return f'<Place {self.name}>'
     

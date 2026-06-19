@@ -1,8 +1,11 @@
 # app/routes/users_routes.py
+import re
+
 from flask import Blueprint, render_template, current_app, request, flash, redirect, url_for, jsonify # Добавим jsonify, если будем использовать AJAX
 from flask_login import current_user, login_required
 from app import db
-from app.models import User, Group
+from app.models import User, Group, Place
+from sqlalchemy.exc import IntegrityError
 
 users_bp = Blueprint('users', __name__)
 
@@ -20,6 +23,7 @@ def list_users():
             name = request.form.get('name')
             password = request.form.get('password')
             group_id_str = request.form.get('group_id')
+            place_id_str = request.form.get('place_id')
 
             # Валидация (минимальная)
             if login and group_id_str:
@@ -36,8 +40,18 @@ def list_users():
                         flash('❌ Пользователь с таким именем уже существует.', 'danger')
                         return redirect(url_for('users.list_users'))
 
+                    exists = User.query.filter_by(login=login).first()
+                    if exists:
+                        flash("Пользователь с таким логином уже существует", "danger")
+                        return redirect(url_for('users.list_users'))
+                    
                     # Создаём нового пользователя
-                    new_user = User(login = login, name=name, group_id=int(group_id_str), note=f'Created by {current_user.name}')
+                    new_user = User(
+                        login = login, 
+                        name=name, 
+                        group_id=int(group_id_str), 
+                        place_id=int(place_id_str), 
+                        note=f'Created by {current_user.name}')
                     new_user.set_password(password)
                     new_user.active = True
 
@@ -63,6 +77,7 @@ def list_users():
             user_id = request.form.get('user_id') # Получаем ID пользователя из формы
             name = request.form.get('name')
             group_id_str = request.form.get('group_id')
+            place_id_str = request.form.get('place_id')
             new_password = request.form.get('password') # Пароль опционально
             active_status = request.form.get('active') # Получаем статус активности из формы
 
@@ -109,4 +124,161 @@ def list_users():
     # GET-запрос: отображаем список
     users = db.session.execute(db.select(User).options(db.joinedload(User.user_group))).scalars().all()
     groups = db.session.execute(db.select(Group)).scalars().all()
-    return render_template('users/list.html', users=users, groups=groups)
+    places = db.session.execute(db.select(Place)).scalars().all()
+    return render_template('users/list.html', users=users, groups=groups, places=places)
+
+# марушрут для создания пользователей через ajax
+@users_bp.post("/users/create")
+@login_required
+def create_user():
+    data = request.get_json()
+
+    if not re.fullmatch(r"[a-zA-Z0-9._-]+", data["login"]):
+            return jsonify({
+                "success": False,
+                "error": "Логин может содержать только латинские буквы, цифры и символы ._-"
+            }), 400
+            
+    try:
+        user = User(
+            login=data["login"],
+            name=data["name"],
+            group_id=data["group_id"],
+            place_id=data.get("place_id"),
+            active=True
+        )
+
+        
+        user.set_password(data["password"])
+
+        db.session.add(user)
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Пользователь создан",
+            "user": {
+                "id": user.id,
+                "login": user.login,
+                "name": user.name,
+                "group": user.user_group.text,
+                "active": user.active,
+                "place_id": user.place_id,
+                "group_id": user.group_id
+            }
+        })
+
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "error": "Логин уже существует"
+        }), 400
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+        
+# марушрут для редактирования пользователей через ajax
+@users_bp.post("/users/edit")
+@login_required
+def edit_user():
+    data = request.get_json()
+    print(data)
+    user_id = data["user_id"]
+    login=data["login"]
+    name=data["name"]
+    group_id=data["group_id"]
+    place_id=data.get("place_id")
+    password=data.get("password")
+    active=True
+    
+    if not re.fullmatch(r"[a-zA-Z0-9._-]+", login):
+        return jsonify({
+            "success": False,
+            "error": "Логин может содержать только латинские буквы, цифры и символы ._-"
+        }), 400
+    
+    if not place_id:
+        return jsonify({
+                "success": False,
+                "error": "Укажите место работы"
+            }), 400
+        
+    if user_id and name and group_id:
+                try:
+                    # Найдём пользователя по ID
+                    edit_user = db.session.get(User, int(user_id))               
+                    if not edit_user:
+                        db.session.rollback()
+                        return jsonify({
+                            "success": False,
+                            "error": "Пользователь не найден"
+                        }), 400
+                    # Проверяем группу
+                    group = db.session.get(Group, int(group_id))
+                    if not group:
+                        db.session.rollback()
+                        return jsonify({
+                            "success": False,
+                            "error": "Группа не найдена"
+                        }), 400
+                    # Проверяем группу
+                    place = db.session.get(Place, int(place_id))
+                    if not place:
+                        db.session.rollback()
+                        return jsonify({
+                            "success": False,
+                            "error": "Место не найдено"
+                        }), 400
+                        
+                                        # Обновим данные пользователя
+                    edit_user.name = name
+                    edit_user.login = login
+                    edit_user.group_id = int(group_id)
+                    edit_user.place_id = int(place_id)
+                    # Обновим статус активности
+                    edit_user.active = (active == 'on') # 'on' если чекбокс активен, иначе False
+
+                    # Обновим пароль, если он был введён
+                    if password:
+                        edit_user.set_password(password)
+
+                    db.session.commit()
+                    current_app.logger.info(f"Обновлён пользователь: {name}")
+                    return jsonify({
+                            "success": True,
+                            "message": "Пользователь обновлен",
+                            "user": {
+                                "id": edit_user.id,
+                                "login": edit_user.login,
+                                "name": edit_user.name,
+                                "group": edit_user.user_group.text,
+                                "active": edit_user.active,
+                                "place_id": edit_user.place_id,
+                                "group_id": edit_user.group_id
+                            }
+                        })
+                except IntegrityError:
+                    db.session.rollback()
+                    return jsonify({
+                        "success": False,
+                        "error": "Логин уже существует"
+                    }), 400
+
+                except Exception as e:
+                    db.session.rollback()
+                    return jsonify({
+                        "success": False,
+                        "error": str(e)
+                    }), 500
+    else:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "error": "Недостаточно данных"
+        }), 400
+    

@@ -22,6 +22,8 @@ const els = {
     modal: document.getElementById("createClientModal"),
 };
 
+setupPhoneMask(els.phoneInput);
+
 export function openCreateClientModal(prefillName = "") {
     console.log("openCreateClientModal");
     els.submitMode.value = "post";
@@ -38,6 +40,7 @@ export function openCreateClientModal(prefillName = "") {
 
         els.submitMode.value = "api";
     }
+
 
     els.modalTitle.textContent = "Создать клиента";
 
@@ -128,4 +131,44 @@ function normalizeNamePart(value) {
 
     return value.charAt(0).toUpperCase() +
            value.slice(1).toLowerCase();
+}
+
+function setupPhoneMask(input) {
+    if (!input) return;
+
+    input.addEventListener("input", () => {
+        let digits = input.value.replace(/\D/g, "");
+
+        // убираем первую 7 или 8
+        if (digits.startsWith("8")) {
+            digits = digits.slice(1);
+        }
+
+        if (digits.startsWith("7")) {
+            digits = digits.slice(1);
+        }
+
+        // максимум 10 цифр после +7
+        digits = digits.slice(0, 10);
+
+        let result = "+7";
+
+        if (digits.length > 0) {
+            result += " (" + digits.slice(0, 3);
+        }
+
+        if (digits.length >= 4) {
+            result += ") " + digits.slice(3, 6);
+        }
+
+        if (digits.length >= 7) {
+            result += "-" + digits.slice(6, 8);
+        }
+
+        if (digits.length >= 9) {
+            result += "-" + digits.slice(8, 10);
+        }
+
+        input.value = result;
+    });
 }

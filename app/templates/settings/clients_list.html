@@ -65,6 +65,7 @@
 {% include "components/client_modal.html" %}
 {% endblock %}
 {% block scripts %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/inputmask/5.0.9/inputmask.min.js"></script>
     <!-- Подключаем JS файл в качестве модуля (для импорта)-->
     <script type="module"
         src="{{ url_for('static', filename='js/clients/clients.js') }}">
