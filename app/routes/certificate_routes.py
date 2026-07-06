@@ -445,12 +445,14 @@ def issue_certificate():
 def spend_certificate_route(certificate_id):
     data = request.get_json()
 
+    client_id = data.get("client_id")
     amount = data.get("amount")
     comment = data.get("comment")
 
     try:
-        spend_certificate(
+        usage, deactivated = spend_certificate(
             certificate_id=certificate_id,
+            client_id=client_id,
             amount=amount,
             user_id=current_user.id,
             comment=comment
@@ -458,7 +460,8 @@ def spend_certificate_route(certificate_id):
 
         return jsonify({
             "success": True,
-            "message": "Средства успешно списаны"
+            "message": "Средства успешно списаны",
+            "deactivated": deactivated
         })
 
     except ValueError as e:
@@ -484,6 +487,7 @@ def get_certificate_usages(certificate_id):
     for u in usages:
         result.append({
             "amount": float(u.amount),
+            "client": u.client.name or "",
             "comment": u.comment or "",
             "date": u.created_at.strftime("%d.%m.%Y %H:%M"),
             "user": u.user.name

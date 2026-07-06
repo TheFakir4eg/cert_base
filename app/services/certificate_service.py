@@ -3,7 +3,7 @@
 from datetime import datetime
 from decimal import Decimal
 from app import db
-from app.models import Certificate, CertificateUsage
+from app.models import Certificate, CertificateUsage, Client
 from sqlalchemy import func
 import re
 
@@ -16,7 +16,7 @@ def get_certificate_or_404(certificate_id: int) -> Certificate:
         raise ValueError("Сертификат не найден")
     return certificate
 
-def spend_certificate(certificate_id: int, amount, user_id: int, comment: str | None = None):
+def spend_certificate(certificate_id: int, client_id:int, amount, user_id: int, comment: str | None = None):
     """
     Списание средств с сертификата
 
@@ -26,6 +26,7 @@ def spend_certificate(certificate_id: int, amount, user_id: int, comment: str | 
     :param comment: комментарий
     """
 
+    deactivated = False
     # 1. Блокируем сертификат на время операции (очень важно!)
     certificate = (
         db.session.query(Certificate)
@@ -46,9 +47,15 @@ def spend_certificate(certificate_id: int, amount, user_id: int, comment: str | 
     if amount > certificate.balance:
         raise ValueError("Недостаточно средств на сертификате")
 
-    # 3. Создаём запись списания
+    # 3. 
+    client = Client.query.get(client_id)
+    if client is None:
+        raise ValueError("Клиент не найден")
+    
+    # 4. Создаём запись списания
     usage = CertificateUsage(
         certificate_id=certificate_id,
+        client_id = client_id,
         amount=amount,
         comment=comment,
         user_id=user_id
@@ -60,14 +67,26 @@ def spend_certificate(certificate_id: int, amount, user_id: int, comment: str | 
     db.session.flush()
     #new_balance = certificate.balance
     # 4. Автоматически выводим из оборота
-    if certificate.balance == 0:
-        certificate.active = False
-        certificate.edit_user_id = user_id
+    # if certificate.balance == 0:
+    #     certificate.active = False
+    #     certificate.edit_user_id = user_id
 
+    used = (
+        db.session.query(func.coalesce(func.sum(CertificateUsage.amount), 0))
+        .filter(CertificateUsage.certificate_id == certificate_id)
+        .scalar()
+    )
+
+    remaining = certificate.total_amount - Decimal(used)
+
+    if remaining == 0:
+        certificate.edit_user_id = user_id
+        certificate.active = False
+        deactivated = True
     # 5. Коммит — атомарность операции
     db.session.commit()
 
-    return usage
+    return usage, deactivated
 
 
 def get_certificate_usages(certificate_id: int):

@@ -7,48 +7,45 @@ import { money, showFlash, setupModalReset, setupBulkFields } from "../utils.js"
 import { eventBus } from "../core/eventBus.js";
 import { openCreateClientModal } from "../clients/modal.js";
 import { initExpirationType } from "./form.js";
+import { initClientSelect } from "./selection.js";
 
 const confirmModal = new bootstrap.Modal(document.getElementById("confirmActionModal"));
 const confirmText = document.getElementById("confirmActionModalText");
 const confirmBtn = document.getElementById("confirmActionModalBtn");
+const issueClient = initClientSelect("#issue_client");
+const spendClient = initClientSelect("#spend_client");
 
-const issueClientSelect = new TomSelect("#issue_client", {
-    create: false,
-    placeholder: "Начните вводить клиента..."
+// обработка двойного клика по строке  - вызов модалки "история транзакций"
+dom.tbody.addEventListener("dblclick", async (e) => {
+    const row = e.target.closest(".cert-row");
+    if (!row) return;
+    const certId = row.dataset.id;
+    await openUsageHistory(certId);
 });
 
-let currentClientSearch = "";
+eventBus.on("client:created", ({ client, source }) => {
 
-issueClientSelect.on("type", (str) => {
-    //currentClientSearch = str;
-    currentClientSearch = (str || "").trim();
-    console.log("typed:", str);
+    for (const item of [issueClient, spendClient]) {
+
+        item.select.addOption({
+            value: client.id,
+            text: client.name
+        });
+
+        item.select.refreshOptions(false);
+    }
+
+    if (source === "issue") {
+        issueClient.select.setValue(client.id);
+    }
+
+    if (source === "spend") {
+        spendClient.select.setValue(client.id);
+    }
 });
 
-// слушаем событие для передачи данных в модалку выдачи сертификата
-// document.addEventListener("clientCreated", (event) => {
-//         const client = event.detail;
-
-//         issueClientSelect.addOption({
-//             value: client.id,
-//             text: client.name
-//         });
-
-//         issueClientSelect.setValue(client.id);
-//     }
-// );
-eventBus.on("client:created", (client) => {
-    issueClientSelect.addOption({
-        value: client.id,
-        text: client.name
-    });
-
-    issueClientSelect.refreshOptions(false);
-    issueClientSelect.setValue(client.id);
-});
-
-eventBus.on("client:open-create", ({ name }) => {
-    openCreateClientModal(name);
+eventBus.on("client:open-create", ({ name, source }) => {
+    openCreateClientModal(name, source);
 });
 
 // вызов модалки создания клиента внутри модалки выдачи сертификата
@@ -57,7 +54,20 @@ const issueCreateClientBtn = document.getElementById("issueCreateClientBtn");
 if (issueCreateClientBtn) {
     issueCreateClientBtn.addEventListener("click", () => {
         eventBus.emit("client:open-create", {
-            name: currentClientSearch
+            name: issueClient.getSearch(),
+            source: "issue"
+        });
+    });
+}
+
+// вызов модалки создания клиента внутри модалки списания средств
+const spendCreateClientBtn = document.getElementById("spendCreateClientBtn");
+
+if (spendCreateClientBtn) {
+    spendCreateClientBtn.addEventListener("click", () => {
+        eventBus.emit("client:open-create", {
+            name: spendClient.getSearch(),
+            source: "spend"
         });
     });
 }
@@ -78,6 +88,7 @@ export async function openUsageHistory(certId) {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${u.date}</td>
+                <td>${u.client}</td>
                 <td>${money(u.amount)}</td>
                 <td>${u.user}</td>
                 <td>${u.comment}</td>
@@ -126,8 +137,7 @@ if (dom.editingBtn) {
 
         if (state.selectedRow.dataset.expirationDate) {
             expirationType.value = "date";
-            expirationDate.value =
-                state.selectedRow.dataset.expirationDate;
+            expirationDate.value = state.selectedRow.dataset.expirationDate;
         } else {
             expirationType.value = "unlimited";
         }
@@ -149,18 +159,14 @@ if (dom.issuingBtn) {
         if (!state.selectedRow) return;
 
         document.getElementById("issue_cert_id").value = state.selectedRow.dataset.id;
-
         // дата выдачи - сегодня
         const today = new Date().toISOString().split('T')[0];
         document.getElementById("issue_date").value = today;
-
         // очищаем клиента перед показом окна
-        issueClientSelect.clear();
+        //issueClientSelect.clear();
+        issueClient.select.clear();
         document.getElementById("issue_note").value = "";
-
-        dom.issueModal.show();
-        
-
+        dom.issueModal.show();       
     });
 }
 
@@ -172,12 +178,12 @@ document.getElementById("issueCertForm").addEventListener("submit", async (e) =>
         cert_id: document.getElementById("issue_cert_id").value,
         issue_date: document.getElementById("issue_date").value,
         //client_id: document.getElementById("issue_client").value,
-        client_id: issueClientSelect.getValue(),
+        client_id: issueClient.select.getValue(),
         place_id: document.getElementById("issue_place").value,
         note: document.getElementById("issue_note").value
     };
 
-    if (!issueClientSelect.getValue()) {
+    if (!issueClient.select.getValue()) {
         alert("Выберите клиента");
         return;
     }
@@ -197,8 +203,11 @@ if (dom.spendBtn) {
         if (!state.selectedRow) return;
         document.getElementById("spend_cert_id").value = state.selectedRow.dataset.id;
         document.getElementById("spend_balance").value = state.selectedRow.dataset.balance;
+        //document.getElementById("spend_client").value = "";
         document.getElementById("spend_amount").value = "";
         document.getElementById("spend_comment").value = "";
+        // очищаем клиента перед показом окна
+        spendClient.select.clear();
         dom.spendModal.show();
     });
 }
@@ -217,12 +226,17 @@ if (spendForm) {
             return;
         }
         spendInProgress = true;
+        if (!spendClient.select.getValue()) {
+            alert("Выберите клиента");
+            return;
+        }
         try {
             const certId = document.getElementById("spend_cert_id").value;
 
             const data = {
                 amount: document.getElementById("spend_amount").value,
-                comment: document.getElementById("spend_comment").value
+                comment: document.getElementById("spend_comment").value,
+                client_id: spendClient.select.getValue(),
             };
 
             const response = await fetch(`/certificates/${certId}/spend`, {
@@ -234,14 +248,16 @@ if (spendForm) {
             const result = await response.json();
 
             if (response.ok) {
-                //console.log("SPEND SUBMIT");
-                alert("Баланс сертификата = 0 \nСертификат автоматически выведен из оборота")
+                if (result.deactivated) {
+                    alert("Баланс сертификата = 0\nСертификат автоматически выведен из оборота");
+                } else {
+                    alert("Средства успешно списаны");
+                }
                 location.reload();
             } else {
                 alert(result.message);
             }
-        } finally { spendInProgress = false; }
-        
+        } finally { spendInProgress = false; }        
     });
 }
 
@@ -253,20 +269,13 @@ if (dom.closingBtn) {
         if (!state.selectedRow) return;
 
         const certId = state.selectedRow.dataset.id;
-
-        const balance = Number(
-            state.selectedRow.dataset.balance
-        );
+        const balance = Number( state.selectedRow.dataset.balance);
 
         if (balance > 0) {
-
-            confirmText.textContent =
-                `На сертификате остался баланс ${balance}. Вы уверены, что хотите вывести его из оборота?`;
+            confirmText.textContent = `На сертификате остался баланс ${balance}. Вы уверены, что хотите вывести его из оборота?`;
 
             confirmBtn.onclick = async () => {
-
                 confirmModal.hide();
-
                 await closeCertificate(certId);
             };
 
@@ -328,21 +337,17 @@ if (createForm) {
         const seriesAmount = numbers?.at(-1);
 
         // ---- отладочный блок
-        for (const [key, value] of formData.entries()) {
-            console.log(key, value);
-        }
+        // for (const [key, value] of formData.entries()) {
+        //     console.log(key, value);
+        // }
         // ---------
         if (!Number.isFinite(Number(amount))) {
-            errorBlock.textContent =
-                "Номинал должен содержать только цифры";
-
+            errorBlock.textContent = "Номинал должен содержать только цифры";
             errorBlock.classList.remove("d-none");
             return;
         }
         if (seriesAmount && Number(seriesAmount) !== Number(amount)) {
-            errorBlock.textContent =
-                `Номинал в серии (${seriesAmount}) не соответствует полю "Номинал" (${amount})`;
-
+            errorBlock.textContent = `Номинал в серии (${seriesAmount}) не соответствует полю "Номинал" (${amount})`;
             errorBlock.classList.remove("d-none");
             return;
         }
@@ -357,9 +362,7 @@ if (createForm) {
             const result = await response.json().catch(() => null);
 
             if (!response.ok) {
-                errorBlock.textContent =
-                    result.message || "Ошибка создания сертификата";
-
+                errorBlock.textContent = result.message || "Ошибка создания сертификата";
                 errorBlock.classList.remove("d-none");
                 console.error("SERVER ERROR:", result);
                 return;
@@ -377,9 +380,7 @@ if (createForm) {
             
 
         } catch (error) {
-            errorBlock.textContent =
-                "Ошибка соединения с сервером";
-
+            errorBlock.textContent = "Ошибка соединения с сервером";
             errorBlock.classList.remove("d-none");
         }
     });
@@ -398,25 +399,19 @@ if (editForm) {
     editForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const errorBlock =
-            document.getElementById("editCertError");
+        const errorBlock = document.getElementById("editCertError");
 
         errorBlock.classList.add("d-none");
         errorBlock.textContent = "";
 
         const formData = new FormData(editForm);
-
         const series = editForm.elements["series"].value.trim();
-
         const amount = editForm.elements["total_amount"].value.trim();
-
         const numbers = series.match(/\d+/g);
         const seriesAmount = numbers?.at(-1);
 
         if (!Number.isFinite(Number(amount))) {
-            errorBlock.textContent =
-                "Номинал должен содержать только цифры";
-
+            errorBlock.textContent = "Номинал должен содержать только цифры";
             errorBlock.classList.remove("d-none");
             return;
         }
@@ -424,9 +419,7 @@ if (editForm) {
             seriesAmount &&
             Number(seriesAmount) !== Number(amount)
         ) {
-            errorBlock.textContent =
-                `Номинал в серии (${seriesAmount}) не соответствует полю "Номинал" (${amount})`;
-
+            errorBlock.textContent = `Номинал в серии (${seriesAmount}) не соответствует полю "Номинал" (${amount})`;
             errorBlock.classList.remove("d-none");
             return;
         }

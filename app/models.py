@@ -350,7 +350,11 @@ class CertificateUsage(db.Model):
         db.ForeignKey("certificates.id", ondelete="CASCADE"),
         nullable=False
     )
-
+    client_id = db.Column(
+        db.Integer,
+        db.ForeignKey("clients.id", ondelete="CASCADE"),
+        nullable=True
+    )
     amount = db.Column(Numeric(10,2), nullable=False)  # сумма списания
     comment = db.Column(db.String(255), nullable=True)
 
@@ -368,6 +372,7 @@ class CertificateUsage(db.Model):
 
     # связи
     certificate = db.relationship("Certificate", backref="usages")
+    client = db.relationship("Client", backref="usages")
     user = db.relationship("User")
 
     def __repr__(self):

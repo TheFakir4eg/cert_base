@@ -1,7 +1,7 @@
 // /app/static/js/certificates/selection.js
 
 import * as dom from "./dom.js";
-import { openUsageHistory } from "./actions.js";
+//import { openUsageHistory } from "./actions.js";
 import { state } from "./state.js";
 
 // обработка клика по строке
@@ -11,13 +11,7 @@ dom.tbody.addEventListener("click", (e) => {
     selectRow(row);
 });
 
-// обработка двойного клика по строке  - вызов модалки "история транзакций"
-dom.tbody.addEventListener("dblclick", async (e) => {
-    const row = e.target.closest(".cert-row");
-    if (!row) return;
-    const certId = row.dataset.id;
-    await openUsageHistory(certId);
-});
+
 
 
 function selectRow(row) {
@@ -64,4 +58,22 @@ function updateButtonsState() {
     if (dom.issuingBtn) {
         dom.issuingBtn.disabled = !state.selectedRow;
     }
+}
+
+export function initClientSelect(selector) {
+    const select = new TomSelect(selector, {
+        create: false,
+        placeholder: "Начните вводить клиента..."
+    });
+
+    let currentSearch = "";
+
+    select.on("type", (str) => {
+        currentSearch = (str || "").trim();
+    });
+
+    return {
+        select,
+        getSearch: () => currentSearch
+    };
 }

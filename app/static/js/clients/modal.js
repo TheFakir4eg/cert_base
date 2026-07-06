@@ -24,8 +24,11 @@ const els = {
 
 setupPhoneMask(els.phoneInput);
 
-export function openCreateClientModal(prefillName = "") {
+export function openCreateClientModal(prefillName = "", source = null) {
     console.log("openCreateClientModal");
+    let currentCreateSource = null;
+    currentCreateSource = source;
+    
     els.submitMode.value = "post";
     let prefillLastName = "";
     let prefillFirstName = "";
