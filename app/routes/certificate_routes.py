@@ -3,8 +3,9 @@ from datetime import datetime
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, current_app, request, url_for
 from flask_login import login_required,current_user
+from sqlalchemy import Cast, Integer, func
 from app import db
-from app.models import Certificate, CertificateUsage, Client, Place, ServiceGroup, User
+from app.models import Certificate, CertificateSeries, CertificateUsage, Client, Place, ServiceGroup, User
 from app.utils.permissions import permission_required
 from app.services.certificate_service import get_certificate_usages, spend_certificate, validate_certificate_series
 from datetime import datetime
@@ -60,7 +61,6 @@ def list_certificates():
             else:
                 expiration_value = None
 
-            
             existing_cert = db.session.execute(
                 db.select(Certificate).where(
                     Certificate.series == series,
@@ -129,8 +129,6 @@ def list_certificates():
                     "message": "Сертификат успешно создан"
                 })
                 
-                
-
             except Exception as e:
                 db.session.rollback()
 
@@ -141,6 +139,11 @@ def list_certificates():
         
         # массовое заведение
         elif action == "bulk_create":
+            #массив номеров (для случая заведения сертификатов без номеров)
+            numbers = [] 
+            qty = int(request.form.get("notnumber-qty")) if request.form.get("notnumber-qty") else None
+            # чекбокс "Сертификаты без номеров"
+            without_numbers = request.form.get("notnumber") is not None
             # Обработка формы создания сертификата
             reason = request.form.get('reason')
             series = request.form.get('series')
@@ -177,33 +180,69 @@ def list_certificates():
             else:
                 expiration_value = None
                 
-            start = int(request.form.get("first_number"))
-            end = int(request.form.get("last_number"))
-            
-            if end - start > 500:
-                return jsonify({
-                        "success": False,
-                        "message": "Слишком большой диапазон"
-                    }), 400
+            if not without_numbers:
+                start = int(request.form.get("first_number"))
+                end = int(request.form.get("last_number"))      
+                numbers = [
+                    str(i)
+                    for i in range(start, end + 1)
+                ]
                 
-            existing = db.session.execute(
-                    db.select(Certificate.number)
-                    .where(
-                        Certificate.series == series,
-                        Certificate.number.in_(
-                            [str(num) for num in range(start, end + 1)]
+                if end - start > 500:
+                    return jsonify({
+                            "success": False,
+                            "message": "Слишком большой диапазон"
+                        }), 400
+                    
+                existing = db.session.execute(
+                        db.select(Certificate.number)
+                        .where(
+                            Certificate.series == series,
+                            Certificate.number.in_(
+                                [str(num) for num in range(start, end + 1)]
+                            )
                         )
-                    )
-                ).all()
-            
-            # проверяем существование сертификата с полученными данными (серия и номер) 
-            if existing:
-                return jsonify({
-                    "success": False,
-                    "message": "В выбранном диапазоне уже существуют сертификаты"
-                }), 400
-            
+                    ).all()
                 
+                # проверяем существование сертификата с полученными данными (серия и номер) 
+                if existing:
+                    return jsonify({
+                        "success": False,
+                        "message": "В выбранном диапазоне уже существуют сертификаты"
+                    }), 400
+            # чекбокс "сертфикаты без номера" активен        
+            else:
+                existing_series = db.session.execute(
+                    db.select(Certificate.id)
+                    .where(Certificate.series == series)
+                    .limit(1)
+                ).scalar()
+                existing_counter = CertificateSeries.query.filter_by(
+                    series=series
+                ).first()
+                if existing_series:
+                    return jsonify({
+                        "success": False,
+                        "message": "В указанной серии существуют сертификаты"
+                    }), 400
+                if existing_counter:
+                    return jsonify({
+                        "success": False,
+                        "message": "Указанная серия уже существует"
+                    }), 400
+                if qty is None or qty <= 0:
+                    return jsonify({
+                        "success": False,
+                        "message": "Количество должно быть больше нуля."
+                    }), 400
+                # ограничиваем количество безномерных сертификатов в рамках одного заведения
+                elif qty > 500:
+                    return jsonify({
+                        "success": False,
+                        "message": "Слишком большое количество"
+                    }), 400
+                else: numbers = [None] * qty
+            
             # проверка серии и номинала
             validation_error = validate_certificate_series(
                 series,
@@ -223,9 +262,10 @@ def list_certificates():
                 servicegroup_id = int(servicegroup_id_str) if servicegroup_id_str else None
                 user_id = int(current_user.id) # в качестве создателя пишем текущего пользователя
                 
-                for num in range(start, end + 1):
+                #for num in range(start, end + 1):
+                for num in numbers:
                     certs.append(Certificate(
-                        number=str(num),
+                        number=num,
                         create_date=create_date,
                         reason=reason,
                         series=series,
@@ -242,12 +282,20 @@ def list_certificates():
                         expiration_date = expiration_value,
                         note=note
                     ))
+                if without_numbers:
+                    db.session.add(
+                        CertificateSeries(
+                            series=series,
+                            max_number=qty
+                        )
+                    )
 
                 db.session.add_all(certs)
                 db.session.commit()
                 
-                count = end - start + 1
-                
+                #count = end - start + 1
+                count = len(certs)
+                current_app.logger.info("=== CREATE BULK CERTIFICATE ===")
                 return jsonify({
                     "success": True,
                     "message": f"Успешно создано сертификатов: {count}"
@@ -324,11 +372,6 @@ def list_certificates():
                     "success": False,
                     "message": "Сертификат с такой серией и номером уже существует."
                 }), 400
-                # flash(
-                #     '❌ Сертификат с такой серией и номером уже существует.',
-                #     'danger'
-                # )
-                # return redirect(url_for('certificates.list_certificates'))
 
             # проверка бизнес-правила серии
             validation_error = validate_certificate_series(
@@ -348,9 +391,7 @@ def list_certificates():
                 # Конвертируем ID
                 servicegroup_id = int(servicegroup_id_str) if servicegroup_id_str else None
                 user_id = int(current_user.id) # в качестве создателя пишем текущего пользователя
-
-
-                
+    
                 cert.number=number
                 cert.edit_date=edit_date
                 cert.reason=reason
@@ -498,9 +539,13 @@ def get_certificate_usages(certificate_id):
 @certificates_bp.post("/certificates/<int:certificate_id>/close")
 @login_required
 def close_certificate(certificate_id):
+    data = request.get_json() or {}
+    comment = data.get("comment", "").strip()
+
+    if not comment:
+        return jsonify({"error": "Необходимо указать причину вывода"}), 400
 
     cert = db.session.get(Certificate, certificate_id)
-
     if not cert:
         return jsonify({"error": "Not found"}), 404
 
@@ -508,6 +553,13 @@ def close_certificate(certificate_id):
 
     cert.active = False
     cert.edit_user_id = current_user.id
+
+    record = f"Причина вывода сертификата: {comment}"
+
+    if cert.note:
+        cert.note += f"\n\n{record}"
+    else:
+        cert.note = record
 
     db.session.commit()
 

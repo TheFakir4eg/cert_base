@@ -1,0 +1,40 @@
+<div class="modal fade" id="closeCertModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Подтвердите действие</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form id="closeCertForm">
+        <div class="modal-body">
+          <p id="closeCertText" class="mb-3 text-danger fw-semibold"></p>
+          <div class="mb-3">
+            <label class="form-label">Комментарий</label>
+            <textarea 
+              class="form-control form-comment-auto" 
+              id="close_note"
+              placeholder="Обязательно напишите причину"
+              maxlength="250">
+            </textarea>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+          <button 
+                type="submit" 
+                class="btn btn-primary" 
+                id="closeConfirmBtn"
+                disabled>
+                Подтвердить
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>

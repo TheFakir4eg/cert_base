@@ -2,7 +2,7 @@
 
 import * as dom from "./dom.js";
 import { state } from "./state.js";
-import { money, showFlash, setupModalReset, setupBulkFields } from "../utils.js";
+import { money, showFlash, setupModalReset, setupCreateMode } from "../utils.js";
 //import { prepareCreateClientForm } from "../clients/modal.js";
 import { eventBus } from "../core/eventBus.js";
 import { openCreateClientModal } from "../clients/modal.js";
@@ -91,7 +91,7 @@ export async function openUsageHistory(certId) {
                 <td>${u.client}</td>
                 <td>${money(u.amount)}</td>
                 <td>${u.user}</td>
-                <td>${u.comment}</td>
+                <td class="usage-comment">${u.comment ?? ""}</td>
             `;
             table.appendChild(tr);
         });
@@ -264,26 +264,69 @@ if (spendForm) {
 
 
 // работа кнопки "Вывод"
+// if (dom.closingBtn) {
+//     dom.closingBtn.addEventListener("click", async () => {
+//         if (!state.selectedRow) return;
+
+//         const certId = state.selectedRow.dataset.id;
+//         const balance = Number( state.selectedRow.dataset.balance);
+
+//         if (balance > 0) {
+//             confirmText.textContent = `На сертификате остался баланс ${balance}. Вы уверены, что хотите вывести его из оборота?`;
+
+//             confirmBtn.onclick = async () => {
+//                 confirmModal.hide();
+//                 await closeCertificate(certId);
+//             };
+
+//             confirmModal.show();
+//             return;
+//         }
+
+//         await closeCertificate(certId);
+//     });
+// }
 if (dom.closingBtn) {
-    dom.closingBtn.addEventListener("click", async () => {
+    dom.closingBtn.addEventListener("click", () => {
         if (!state.selectedRow) return;
 
         const certId = state.selectedRow.dataset.id;
         const balance = Number( state.selectedRow.dataset.balance);
+        
+        dom.closeText.textContent =
+            balance > 0
+                ? `На сертификате остался баланс ${balance}. После вывода сертификата эти средства будут потеряны.`
+                : "Подтвердите вывод сертификата из оборота.";
 
-        if (balance > 0) {
-            confirmText.textContent = `На сертификате остался баланс ${balance}. Вы уверены, что хотите вывести его из оборота?`;
+        dom.closeNote.value = "";
+        dom.closeConfirmBtn.disabled = true;
 
-            confirmBtn.onclick = async () => {
-                confirmModal.hide();
-                await closeCertificate(certId);
-            };
+        dom.closeModal.show();
+    });
+}
 
-            confirmModal.show();
-            return;
-        }
+//const closeForm = document.getElementById("closeCertForm");
+//const closeNote = document.getElementById("close_note");
 
-        await closeCertificate(certId);
+if (dom.closeForm) {
+    dom.closeForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const certId = state.selectedRow.dataset.id;
+
+        dom.closeModal.hide();
+
+        await closeCertificate(
+            certId,
+            dom.closeNote.value.trim()
+        );
+    });
+}
+
+if (dom.closeNote) {
+    dom.closeNote.addEventListener("input", () => {
+        dom.closeConfirmBtn.disabled =
+            dom.closeNote.value.trim().length === 0;
     });
 }
 
@@ -319,7 +362,9 @@ if (createForm) {
         "createCertForm",
         "createCertError"
     );
-    setupBulkFields();
+    //setupBulkFields();
+    //setupNotNumberFields();
+    setupCreateMode();
     createForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
@@ -390,6 +435,8 @@ if (createForm) {
 const editForm = document.getElementById("editCertForm");
 
 if (editForm) {
+    const seriesField = editForm.querySelector('input[name="series"]');
+    seriesField.disabled = true;
     setupModalReset(
         "editCertModal",
         "editCertForm",
@@ -460,14 +507,42 @@ if (editForm) {
     });
 }
 
-async function closeCertificate(certId) {
+// async function closeCertificate(certId) {
+//     const response = await fetch(
+//         `/certificates/${certId}/close`,
+//         {
+//             method: "POST",
+//             headers: {
+//                 "Content-Type": "application/json"
+//             }
+//         }
+//     );
+
+//     const result = await response.json();
+
+//     if (response.ok) {
+//         showFlash(
+//             result.message || "Сертификат успешно выведен",
+//             "success"
+//         );
+
+//         setTimeout(() => location.reload(), 1500);
+//     } else {
+//         alert(result.error || "Ошибка");
+//     }
+// }
+
+async function closeCertificate(certId, comment) {
     const response = await fetch(
         `/certificates/${certId}/close`,
         {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
-            }
+            },
+            body: JSON.stringify({
+                comment: comment
+            })
         }
     );
 

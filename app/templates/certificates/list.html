@@ -317,7 +317,7 @@
                         >
                             <th scope="row">{{ loop.index }}</th>
                             <td>{{ cert.series }}</td>
-                            <td>{{ cert.number }}</td>
+                            <td>{{ cert.number or "не присвоен" }}</td>
                             <td>{{ cert.create_date.strftime('%d.%m.%Y') if cert.create_date else '' }}</td>
                             <td>{{ cert.issue_date.strftime('%d.%m.%Y') if cert.issue_date else '' }}</td>
                             <td>{{ cert.reason or '' }}</td>
@@ -387,6 +387,8 @@
     {% include "certificates/_usage_history_modal.html" %}
     <!-- Модальное окно создания клиента внутри модалки выдачи сертификата --> 
     {% include "components/client_modal.html" %}
+    <!-- Модальное окно вывода сертификата из оборота --> 
+    {% include "certificates/_close_modal.html" %}
 {% endblock %}
 
 {% block scripts %}

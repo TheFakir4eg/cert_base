@@ -346,3 +346,20 @@ body {
     gap: 5px;
     width: 90px
 }
+
+.usage-comment {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.notnumber-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: auto;
+}
+#notNumberQty {
+    gap: 5px;
+    width: 90px
+}

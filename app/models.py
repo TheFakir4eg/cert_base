@@ -29,7 +29,7 @@ class Certificate(db.Model): # Модель для таблицы certificates
     create_date = db.Column(db.DateTime, default=lambda: datetime.now()) # Дата создания. Записывается в бд автоматически. 
     reason = db.Column(db.String(100), nullable=True) # Причина создания сертификата
     series = db.Column(db.String(20), nullable=False) # серия сертификата 
-    number = db.Column(db.String(20), nullable=False) # номер сертификата
+    number = db.Column(db.String(20), nullable=True) # номер сертификата
 
     place_id = db.Column(db.Integer, db.ForeignKey('places.id'), nullable=True) # Внешний ключ, место создания сетрификата
     issue_place_id = db.Column(db.Integer, db.ForeignKey('places.id'), nullable=True) # Внешний ключ, место выдачи сертификата
@@ -116,6 +116,11 @@ class Certificate(db.Model): # Модель для таблицы certificates
         return Decimal(result)
         #return result
     
+    # отображение номера сертификата
+    @property
+    def display_number(self):
+        return self.number or "не присвоен"
+
     # баланс
     @property
     def balance(self):
@@ -377,3 +382,18 @@ class CertificateUsage(db.Model):
 
     def __repr__(self):
         return f"<CertificateUsage cert={self.certificate_id} amount={self.amount}>"
+    
+class CertificateSeries(db.Model):
+    """
+    Служебная таблица для учета безномерных сертификатов.
+
+    last_number — последний автоматически присвоенный номер.
+
+    max_number — максимально допустимое количество сертификатов ыданной серии.
+    """
+    __tablename__ = "certificate_series"
+
+    id = db.Column(db.Integer, primary_key=True)
+    series = db.Column(db.String(20), unique=True, nullable=False)
+    last_number = db.Column(db.Integer, nullable=False, default=0)
+    max_number = db.Column(db.Integer, nullable=True)

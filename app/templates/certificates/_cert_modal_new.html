@@ -24,12 +24,13 @@
                         <input type="text"
                             class="form-control"
                             name="series"
+                            id="series"
                             value="{{ cert.series if cert else '' }}"
                             required>
                     </div>
 
                     <div>
-                        <label class="form-label">Номер *</label>
+                        <label class="form-label">Номер</label>
                         <input type="text"
                             class="form-control"
                             name="number"
@@ -250,6 +251,23 @@
                         type="number"
                         class="form-control form-control-sm"
                         name="last_number">
+                </div>
+            </div>
+            <div class="notnumber-container">
+                <label class="notnumber-check">
+                    <input
+                        type="checkbox"
+                        name="notnumber"
+                        id="notnumber">
+                    Сертификаты без номеров
+                </label>
+                <div id="notNumberQty">
+                    <span>Количество</span>
+                    <input
+                        type="number"
+                        class="form-control form-control-sm"
+                        name="notnumber-qty"
+                        >
                 </div>
             </div>
             {% endif %}

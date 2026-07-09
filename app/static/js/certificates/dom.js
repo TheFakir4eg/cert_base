@@ -26,3 +26,11 @@ export const issueModal = new bootstrap.Modal(
     document.getElementById("issueCertModal")
 );
 
+export const closeModal = new bootstrap.Modal(
+    document.getElementById("closeCertModal")
+);
+
+export const closeForm = document.getElementById("closeCertForm");
+export const closeText = document.getElementById("closeCertText");
+export const closeNote = document.getElementById("close_note");
+export const closeConfirmBtn = document.getElementById("closeConfirmBtn");
