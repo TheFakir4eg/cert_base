@@ -8,6 +8,7 @@ import { eventBus } from "../core/eventBus.js";
 import { openCreateClientModal } from "../clients/modal.js";
 import { initExpirationType } from "./form.js";
 import { initClientSelect } from "./selection.js";
+import { transactionClient } from "./transaction/tr_modal.js";
 
 const confirmModal = new bootstrap.Modal(document.getElementById("confirmActionModal"));
 const confirmText = document.getElementById("confirmActionModalText");
@@ -20,27 +21,26 @@ dom.tbody.addEventListener("dblclick", async (e) => {
     const row = e.target.closest(".cert-row");
     if (!row) return;
     const certId = row.dataset.id;
-    await openUsageHistory(certId);
+    //await openUsageHistory(certId);
+    await openTransactionHistory(certId);
 });
 
 eventBus.on("client:created", ({ client, source }) => {
-
-    for (const item of [issueClient, spendClient]) {
-
+    for (const item of [issueClient, spendClient, transactionClient]) {
         item.select.addOption({
             value: client.id,
             text: client.name
         });
-
         item.select.refreshOptions(false);
     }
-
     if (source === "issue") {
         issueClient.select.setValue(client.id);
     }
-
     if (source === "spend") {
         spendClient.select.setValue(client.id);
+    }
+    if (source === "transaction") {
+        transactionClient.select.setValue(client.id);
     }
 });
 
@@ -71,6 +71,36 @@ if (spendCreateClientBtn) {
         });
     });
 }
+const transactionCreateClientBtn = document.getElementById("transactionCreateClientBtn");
+if (transactionCreateClientBtn) {
+    transactionCreateClientBtn.addEventListener("click", () => {
+        eventBus.emit("client:open-create", {
+            name: transactionClient.getSearch(),
+            source: "transaction"
+        });
+    });
+}
+
+
+// новая модалка списания по транзакциям
+if (dom.transactionBtn) {
+    dom.transactionBtn.addEventListener("click", () => {
+        if (!state.selectedRow) return;
+        
+        const cert = state.selectedRow.dataset;
+        //console.log(cert);
+
+        eventBus.emit(
+            "transaction:open",
+            {
+                id: cert.id,
+                balance: cert.balance,
+                servicegroupId: cert.servicegroupId
+            }
+        );
+    });
+}
+
 
 // функция показа истории транзакций
 export async function openUsageHistory(certId) {
@@ -97,6 +127,42 @@ export async function openUsageHistory(certId) {
         });
     }
 
+    new bootstrap.Modal(document.getElementById("usageHistoryModal")).show();
+}
+
+export async function openTransactionHistory(certId) {
+    const response = await fetch(`/certificates/${certId}/transaction`);
+    const data = await response.json();
+    const table = document.getElementById("usageHistoryTable");
+    const emptyText = document.getElementById("noUsagesText");
+
+    table.innerHTML = "";
+
+    if (data.length === 0) {
+        emptyText.classList.remove("d-none");
+    } else {
+        emptyText.classList.add("d-none");
+        data.forEach(tx => {
+            const services = tx.items.map(item => `
+                ${item.service_name}
+                (${item.quantity} × ${money(item.price)})
+            `).join("<br>");
+
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td>${tx.date}</td>
+                <td>${tx.client}</td>
+                <td>${services}</td>
+                <td>${money(tx.amount)}</td>
+                <td>${tx.user}</td>
+                <td class="usage-comment">
+                    ${tx.comment ?? ""}
+                </td>
+            `;
+            table.appendChild(tr);
+        });
+    }
     new bootstrap.Modal(document.getElementById("usageHistoryModal")).show();
 }
 

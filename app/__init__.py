@@ -63,6 +63,7 @@ def create_app():
     from .routes.group_routes import group_bp
     from .routes.new_group_routes import bp as new_group_bp
     from .routes.clients_routes import clients_bp 
+    from .routes.services_routes import services_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(places_bp)
@@ -72,5 +73,6 @@ def create_app():
     app.register_blueprint(settings_bp)
     app.register_blueprint(new_group_bp)
     app.register_blueprint(group_bp)
+    app.register_blueprint(services_bp)
     
     return app

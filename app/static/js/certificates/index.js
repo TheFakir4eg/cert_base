@@ -8,3 +8,11 @@ import "./actions.js";
 import "./selection.js";
 
 import "../clients/clients.js";
+import { initTransaction } from "./transaction/tr_index.js";
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+        initTransaction();
+    }
+);

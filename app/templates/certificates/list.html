@@ -57,6 +57,14 @@
                     Восстановление
                 </button>
                 {% endif %}
+                <button
+                    class="btn btn-info mb-3 transaction-open"
+                    id="transactionCertBtn"
+                    data-id="{{ certificates.id }}"
+                    data-servicegroup="{{ certificates.servicegroup_id }}"
+                    data-balance="{{ certificates.balance }}">
+                    Списать
+                </button>
             </div>
 
             <div class="ms-auto search-container">
@@ -385,10 +393,17 @@
     {% include "certificates/_spend_modal.html" %}
     <!-- Модальное окно с историей списания средств с сертификата --> 
     {% include "certificates/_usage_history_modal.html" %}
-    <!-- Модальное окно создания клиента внутри модалки выдачи сертификата --> 
-    {% include "components/client_modal.html" %}
+    
     <!-- Модальное окно вывода сертификата из оборота --> 
     {% include "certificates/_close_modal.html" %}
+    <!-- Модальное окно обработки транзакции --> 
+    {% include "certificates/_transaction_modal.html" %}
+    <!-- Модальное окно добавления услуги в окно транзакции --> 
+    {% include "components/transaction_item_modal.html" %}
+    <!-- Модальное окно создания клиента внутри модалки выдачи сертификата --> 
+    <!-- Общие модальные окна, которые могут открываться поверх других -->
+    <!-- ВСЕГДА в самом конце -->
+    {% include "components/client_modal.html" %}
 {% endblock %}
 
 {% block scripts %}

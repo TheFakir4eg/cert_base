@@ -25,7 +25,12 @@ const els = {
 setupPhoneMask(els.phoneInput);
 
 export function openCreateClientModal(prefillName = "", source = null) {
-    console.log("openCreateClientModal");
+    //console.log("openCreateClientModal");
+    // console.log(
+    //     "open client modal",
+    //     document.querySelectorAll(".modal.show"),
+    //     document.querySelectorAll(".modal-backdrop")
+    // );
     let currentCreateSource = null;
     currentCreateSource = source;
     

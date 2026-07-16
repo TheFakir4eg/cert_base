@@ -7,12 +7,42 @@
 
     <!-- Кнопка для открытия модального окна -->
     <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createSGModal">
-        Создать
+        Создать группу
     </button>
-
+    <a class="btn btn-primary mb-3" href="{{ url_for('services.service_list') }}">
+        Список услуг
+    </a>
     <ul class="list-group">
         {% for servicegroup in servicegroups %}
-            <li class="list-group-item">{{ servicegroup.name }} - {{ servicegroup.note }}</li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ servicegroup.name }} - {{ servicegroup.note }}
+                <div>    
+                    <button type="button"
+                            class="btn btn-info btn-sm me-1 edit-group-btn"
+                            title="Добавить услугу"
+                            id="create_service"
+                            data-servicegroup-id="{{ servicegroup.id }}"
+                            data-servicegroup-name="{{ servicegroup.name }}">
+                        ➕
+                    </button>
+                    <button type="button"
+                            class="btn btn-info btn-sm me-1 edit-group-btn"
+                            title="Редактировать"
+                            id="servicegroup_edit"
+                            data-servicegroup-id="{{ servicegroup.id }}"
+                            data-servicegroup-name="{{ servicegroup.name }}">
+                        ✏️
+                    </button>
+                    <button type="button"
+                            class="btn btn-info btn-sm delete-group-btn"
+                            title="Удалить"
+                            id="servicegroup_delete"
+                            data-servicegroup-id="{{ servicegroup.id }}"
+                            data-servicegroup-name="{{ servicegroup.name}}">
+                        ❌
+                    </button>
+                </div>
+            </li>
         {% else %}
             <!-- Этот блок отображается, если список servicegroup пуст -->
             <li class="list-group-item text-center text-muted">Список групп пуст.</li>

@@ -102,19 +102,49 @@ class Certificate(db.Model): # Модель для таблицы certificates
         foreign_keys=[issue_place_id],
         back_populates="issued_certificates"
     )
+    
+    transactions = db.relationship(
+        "CertificateTransaction",
+        back_populates="certificate",
+        cascade="all, delete-orphan",
+        lazy=True
+    )
     # сумма списаний
     # !!! потенциально опасное место
     # при большом количестве сертификатов есть риск замедления работы
+    # SELECT certificate_id, SUM(amount)
+    # FROM certificate_transaction_items
+    # GROUP BY certificate_id
     @property
     def used_amount(self):
-        result = db.session.query(
-            func.coalesce(func.sum(CertificateUsage.amount), 0)
-        ).filter(
-            CertificateUsage.certificate_id == self.id
-        ).scalar()
-        
+        result = (
+            db.session.query(
+                func.coalesce(
+                    func.sum(CertificateTransactionItem.amount),
+                    0
+                )
+            )
+            .join(
+                CertificateTransaction,
+                CertificateTransaction.id == CertificateTransactionItem.transaction_id
+            )
+            .filter(
+                CertificateTransaction.certificate_id == self.id
+            )
+            .scalar()
+        )
+
         return Decimal(result)
-        #return result
+    # @property
+    # def used_amount(self):
+    #     result = db.session.query(
+    #         func.coalesce(func.sum(CertificateUsage.amount), 0)
+    #     ).filter(
+    #         CertificateUsage.certificate_id == self.id
+    #     ).scalar()
+        
+    #     return Decimal(result)
+    #     #return result
     
     # отображение номера сертификата
     @property
@@ -273,18 +303,29 @@ class Place(db.Model): # Модель для таблицы places
 
             
 class ServiceGroup(db.Model):
-    """ Группы услуг
+    """_summary_
 
     Args:
         db (_type_): _description_
     """
-    __tablename__ = 'servicegroup'
+    __tablename__ = "servicegroup"
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20), nullable=False)
-    note = db.Column(db.String(250), nullable=True)
-    
-    # Отношения
-    certificates = db.relationship('Certificate', backref='servicegroup', lazy=True) 
+    note = db.Column(db.String(250))
+
+    certificates = db.relationship(
+        "Certificate",
+        backref="servicegroup",
+        lazy=True
+    )
+
+    services = db.relationship(
+        "Services",
+        back_populates="servicegroup",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
     
 class Client(db.Model):
     """Клиенты. Люди, которым выданы сетрификаты
@@ -397,3 +438,127 @@ class CertificateSeries(db.Model):
     series = db.Column(db.String(20), unique=True, nullable=False)
     last_number = db.Column(db.Integer, nullable=False, default=0)
     max_number = db.Column(db.Integer, nullable=True)
+    
+class Services(db.Model):
+    """_summary_
+
+    Args:
+        db (_type_): _description_
+    """
+    __tablename__ = "services"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(250), nullable=False)
+    code = db.Column(db.String(20), unique=True, nullable=True)
+    
+    servicegroup_id = db.Column(
+        db.Integer,
+        db.ForeignKey("servicegroup.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    note = db.Column(db.String(250))
+    is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
+    mis_id = db.Column(db.String(20), unique=True, nullable=True)
+    
+    servicegroup = db.relationship(
+        "ServiceGroup",
+        back_populates="services"
+    )
+    
+    transaction_items = db.relationship(
+        "CertificateTransactionItem",
+        back_populates="service"
+    )
+    
+class CertificateTransaction(db.Model):
+    __tablename__ = "certificate_transactions"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    certificate_id = db.Column(
+        db.Integer,
+        db.ForeignKey("certificates.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    client_id = db.Column(
+        db.Integer,
+        db.ForeignKey("clients.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.now,
+        nullable=False,
+        index=True
+    )
+
+    comment = db.Column(db.String(255))
+    certificate = db.relationship( "Certificate", back_populates="transactions")
+    client = db.relationship( "Client", foreign_keys=[client_id])
+    user = db.relationship( "User", foreign_keys=[user_id])
+    items = db.relationship(
+        "CertificateTransactionItem",
+        back_populates="transaction",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+    
+    def __repr__(self):
+        return f"<CertificateTransaction {self.id}>"
+
+    
+class CertificateTransactionItem(db.Model):
+    __tablename__ = "certificate_transaction_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    transaction_id = db.Column(
+        db.Integer,
+        db.ForeignKey("certificate_transactions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    service_id = db.Column(
+        db.Integer,
+        db.ForeignKey("services.id"),
+        nullable=False,
+        index=True
+    )
+    
+    service_name = db.Column( db.String(250), nullable=False)
+    quantity = db.Column( Numeric(10, 2), default=1, nullable=False)
+    price = db.Column(Numeric(10, 2), nullable=False)
+    amount = db.Column( Numeric(10, 2), nullable=False)
+
+    transaction = db.relationship(
+        "CertificateTransaction",
+        back_populates="items"
+    )
+
+    service = db.relationship(
+        "Services",
+        back_populates="transaction_items",
+        lazy="joined"
+    )
+    
+    def __repr__(self):
+        return (
+            f"<CertificateTransactionItem "
+            f"{self.service_name} "
+            f"{self.quantity}"
+            f"{self.price}"
+            f"{self.amount}>"
+        )

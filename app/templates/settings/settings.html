@@ -2,8 +2,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Настройки</h2>
 <div class="container mt-5">
+        <h2>Настройки</h2>
+
         <!-- Кнопка для Places -->
         {% if current_user.has_permission('places_page') %}
         <div class="col-md-3 mb-3">

@@ -130,38 +130,3 @@ def validate_certificate_series(series: str, total_amount) -> str | None:
         )
 
     return None
-# def use_certificate(*, certificate_id: int, amount: float, user_id: int, comment: str = None):
-#     """
-#     Списание средств с сертификата
-#     """
-
-#     cert = db.session.get(Certificate, certificate_id)
-
-#     if not cert:
-#         raise CertificateError("Сертификат не найден")
-
-#     # 1. проверка статуса (должен быть выдан)
-#     if not cert.client_id:
-#         raise CertificateError("Сертификат не выдан клиенту")
-
-#     # 2. проверка остатка
-#     if cert.balance < amount:
-#         raise CertificateError("Недостаточно средств на сертификате")
-
-#     # 3. создаём запись списания
-#     usage = CertificateUsage(
-#         certificate_id=certificate_id,
-#         amount=amount,
-#         comment=comment,
-#         user_id=user_id,
-#         created_at=datetime.now()
-#     )
-
-#     db.session.add(usage)
-
-#     # 4. (опционально) фиксируем кто правил сертификат
-#     cert.edit_user_id = user_id
-
-#     db.session.commit()
-
-#     return usage

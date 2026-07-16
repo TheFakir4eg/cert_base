@@ -5,6 +5,7 @@ export const editingBtn = document.getElementById("editCertBtn");
 export const spendBtn = document.getElementById("spendCertBtn");
 export const closingBtn = document.getElementById("closingCertBtn");
 export const restoreBtn = document.getElementById("restoreCertBtn");
+export const transactionBtn = document.getElementById("transactionCertBtn");
 
 export const searchToggleBtn = document.getElementById("searchToggleBtn");
 export const searchBox = document.getElementById("searchBox");
@@ -18,17 +19,10 @@ export const clearColumnFilterBtn = document.getElementById("clearColumnFilterBt
 
 export const tbody = document.getElementById("certTableBody");
 
-export const spendModal = new bootstrap.Modal(
-    document.getElementById("spendCertModal")
-);
-
-export const issueModal = new bootstrap.Modal(
-    document.getElementById("issueCertModal")
-);
-
-export const closeModal = new bootstrap.Modal(
-    document.getElementById("closeCertModal")
-);
+export const spendModal = new bootstrap.Modal( document.getElementById("spendCertModal"));
+export const issueModal = new bootstrap.Modal( document.getElementById("issueCertModal"));
+export const closeModal = new bootstrap.Modal( document.getElementById("closeCertModal"));
+export const transactionModal = new bootstrap.Modal( document.getElementById("transactionModal"));
 
 export const closeForm = document.getElementById("closeCertForm");
 export const closeText = document.getElementById("closeCertText");

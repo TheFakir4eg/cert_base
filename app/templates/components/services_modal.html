@@ -1,0 +1,76 @@
+<!-- /app/templates/components/services_modal.html -->
+
+<!-- Модальное окно для создания услуги -->
+<div class="modal fade" id="createServiceModal" tabindex="-1" aria-labelledby="createServiceModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <input type="hidden" id="serviceSubmitMode" value="post">
+        <h5 class="modal-title" id="createServiceModalLabel">Создать услугу</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" id="serviceForm">
+            <div class="modal-body">
+                <input type="hidden" name="action" id="formAction" value="create">
+                <input type="hidden" name="service_id" id="serviceIdInput">
+                <div class="mb-3">
+                    <label class="form-label">Название *</label>
+                    <input type="text"
+                        class="form-control"
+                        id="serviceName"
+                        name="serviceName"
+                        required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Код</label>
+                    <input type="text"
+                        class="form-control"
+                        id="serviceCode"
+                        name="serviceCode">
+                </div>
+                <div class="mb-3">
+                    <label for="servicegroup_id" class="form-label">Группа *</label>
+                    <select class="form-select" id="servicegroup_id" name="servicegroup_id" required>
+                        <option value="" disabled selected>Выберите группу...</option>
+                        {% for servicegroup in servicegroups %}
+                            <option value="{{ servicegroup.id }}">{{ servicegroup.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">ID в МИС</label>
+                    <input type="text"
+                        class="form-control"
+                        id="serviceMisId"
+                        name="serviceMisId">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Комментарий</label>
+                    <textarea
+                        class="form-control form-comment-auto"
+                        id="serviceNote"
+                        name="note"
+                        maxlength="250">
+                    </textarea>
+                </div>
+                <div class="mb-3 form-check">
+                  <input type="checkbox" class="form-check-input" id="active" name="active" checked>
+                  <label class="form-check-label" for="active">Активен</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Закрыть
+                </button>
+                <button type="submit"
+                        class="btn btn-primary"
+                        id="serviceSubmitBtn">
+                    Создать
+                </button>
+            </div>
+        </form>
+    </div>
+  </div>
+</div>

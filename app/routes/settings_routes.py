@@ -2,7 +2,7 @@
 from flask import Blueprint, flash, redirect, render_template, current_app, request, url_for
 from flask_login import login_required
 from app import db
-from app.models import Certificate, Group, ServiceGroup, User
+from app.models import Certificate, Group, ServiceGroup, Services, User
 from app.utils.permissions import permission_required
 
 
@@ -100,7 +100,13 @@ def servicegroup():
     # Получаем все места из базы данных
     servicegroups = db.session.execute(db.select(ServiceGroup)).scalars().all()
     return render_template('settings/servicegroup.html', servicegroups = servicegroups)
-    
+
+@settings_bp.route('/servicegroup/services', methods=['GET', 'POST'])
+@login_required
+def services():
+    services = db.session.execute(db.select(Services)).scalars().all()
+    return redirect(url_for('services.service_list'))
+        
 @settings_bp.route('/create_group', methods=['GET', 'POST'])
 @login_required
 #@permission_required('groups_management', 'can_add') # Требуется право на добавление групп

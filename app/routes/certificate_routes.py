@@ -6,6 +6,7 @@ from flask_login import login_required,current_user
 from sqlalchemy import Cast, Integer, func
 from app import db
 from app.models import Certificate, CertificateSeries, CertificateUsage, Client, Place, ServiceGroup, User
+from app.services.transaction_service import create_transaction, get_certificate_transactions
 from app.utils.permissions import permission_required
 from app.services.certificate_service import get_certificate_usages, spend_certificate, validate_certificate_series
 from datetime import datetime
@@ -461,10 +462,31 @@ def issue_certificate():
 
     cert = Certificate.query.get_or_404(data["cert_id"])
     edit_user_id = int(current_user.id)
+    
     # защита от повторной выдачи
     if cert.client_id:
         return {"error": "Сертификат уже выдан"}, 400
+    if cert.number is None:
+        counter = (
+            db.session.execute(
+                db.select(CertificateSeries)
+                .where(CertificateSeries.series == cert.series)
+                .with_for_update()
+            )
+            .scalar_one_or_none()
+        )
 
+        if counter is None:
+            return {
+                "error": "Для серии не найден счетчик."
+            }, 400
+        if counter.last_number >= counter.max_number:
+            return {
+                "error": "В партии закончились свободные номера."
+            }, 400
+        counter.last_number += 1
+        cert.number = str(counter.last_number)
+        
     cert.client_id = data["client_id"]
     cert.issue_date = data["issue_date"]
     # UPD 16.06.26 place_id -> issue_plcae_id
@@ -587,3 +609,71 @@ def restore_certificate(certificate_id):
     db.session.commit()
 
     return jsonify({"success": True})
+
+@certificates_bp.route("/certificates/<int:certificate_id>/transaction", methods=["GET", "POST"])
+@login_required
+def create_certificate_transaction(certificate_id):
+    if request.method == "POST":
+        data = request.get_json()
+
+        try:
+            transaction = create_transaction(
+                certificate_id=certificate_id,
+                client_id=data["client_id"],
+                user_id=current_user.id,
+                items=data["items"],
+                comment=data.get("comment"),
+            )
+
+        except ValueError as e:
+            return jsonify({
+                "success": False,
+                "message": str(e)
+            }), 400
+
+        #print(transaction)
+        current_app.logger.info(
+            "Created transaction %s for certificate %s",
+            transaction.id,
+            certificate_id
+        )
+        return jsonify({
+            "success": True,
+            "transaction_id": transaction.id
+        })
+    # GET
+    transactions = get_certificate_transactions(certificate_id)
+
+    return jsonify([
+        {
+            "id": tx.id,
+            "date": tx.created_at.strftime(
+                "%d.%m.%Y %H:%M"
+            ),
+            "client": (
+                tx.client.full_name
+                if tx.client else ""
+            ),
+            "user": (
+                tx.user.name
+                if tx.user else ""
+            ),
+            "comment": tx.comment or "",
+            "amount": str(
+                sum(
+                    item.amount
+                    for item in tx.items
+                )
+            ),
+            "items": [
+                {
+                    "service_name": item.service_name,
+                    "quantity": str(item.quantity),
+                    "price": str(item.price),
+                    "amount": str(item.amount),
+                }
+                for item in tx.items
+            ]
+        }
+        for tx in transactions
+    ])

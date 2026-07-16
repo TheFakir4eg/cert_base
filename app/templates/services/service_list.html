@@ -1,0 +1,47 @@
+<!-- app/templates/services/service_list.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Список услуг</h2>
+
+    <!-- Кнопка для открытия модального окна (для создания) -->
+    <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createServiceModal" id="openCreateModalBtn">
+        Создать услугу
+    </button>
+
+    <ul class="list-group" id="servicesList">
+        {% for service in services %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ service.name }} (Группа: {{ service.servicegroup.name }})
+                <div>
+                    <!-- Кнопка редактирования -->
+                    <button type="button"
+                            class=" btn btn-info mb-3 edit-service-btn"
+                            title="Редактировать {{ service.name }}"
+                            data-service-id="{{ service.id }}"
+                            data-name="{{ service.name }}"
+                            data-servicegroup-id="{{ service.servicegroup_id }}"
+                            data-code="{{ service.code or ''}}"
+                            data-note="{{ service.note or '' }}"
+                            data-mis-id="{{ service.mis_id or '' }}"
+                            data-active="{{ 'true' if service.is_active else 'false' }}">
+                            <i class="bi bi-pencil"></i>
+                    </button>
+                    
+                </div>
+            </li>
+        {% else %}
+            <!-- Этот блок отображается, если список places пуст -->
+            <li class="list-group-item text-center text-muted">Список услуг пуст.</li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('settings.servicegroup') }}" class="btn btn-secondary mt-3">Назад</a>
+</div>
+{% include "components/services_modal.html" %}
+{% endblock %}
+
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/services/serviceInteraction.js') }}"></script>
+{% endblock %}

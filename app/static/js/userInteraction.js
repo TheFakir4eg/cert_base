@@ -41,7 +41,7 @@ function addUserToList(user) {
                 data-group-id="${user.group_id}"
                 data-place-id="${user.place_id}"
                 data-active="${user.active}">
-                ✏️
+                <i class="bi bi-pencil"></i>
             </button>
         </div>
     `;
@@ -77,7 +77,7 @@ function updateUserInList(user) {
                 data-group-id="${user.group_id}"
                 data-place-id="${user.place_id}"
                 data-active="${user.active}">
-                ✏️
+                <i class="bi bi-pencil"></i>
             </button>
         </div>
     `;
