@@ -27,3 +27,25 @@ export function initExpirationType(form) {
     updateUI();
     return updateUI;
 }
+
+export function initSpendingType(form) {
+    const spendingType = form.querySelector("[name=spending_type]");
+
+    if (!spendingType) {
+        return;
+    }
+    const servicesBlock = form.querySelector("#certificateServicesBlock");
+    const servicesSelect = form.querySelector("#certificateServices");
+
+    function updateUI() {
+        servicesBlock?.classList.add("d-none");
+
+        if (spendingType.value === "count") {
+            servicesBlock?.classList.remove("d-none");
+        }
+    }
+
+    spendingType.addEventListener("change",updateUI);
+    updateUI();
+    return updateUI;
+}

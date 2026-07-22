@@ -114,21 +114,13 @@ export function setupCreateMode() {
 
     const inputNumber = document.getElementById("input_number");
 
-    const bulkBlocks = document.querySelectorAll(
-        "#bulkFirstNumberBlock, #bulkLastNumberBlock"
-    );
+    const bulkBlocks = document.querySelectorAll( "#bulkFirstNumberBlock, #bulkLastNumberBlock");
 
     const qtyBlock = document.getElementById("notNumberQty");
 
-    const firstNumber = document.querySelector(
-        'input[name="first_number"]'
-    );
-    const lastNumber = document.querySelector(
-        'input[name="last_number"]'
-    );
-    const qty = document.querySelector(
-        'input[name="notnumber-qty"]'
-    );
+    const firstNumber = document.querySelector( 'input[name="first_number"]');
+    const lastNumber = document.querySelector( 'input[name="last_number"]');
+    const qty = document.querySelector( 'input[name="notnumber-qty"]');
 
     const update = () => {
         const bulk = bulkCheckbox.checked;

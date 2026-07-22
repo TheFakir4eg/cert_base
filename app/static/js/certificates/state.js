@@ -7,3 +7,4 @@ export const state = {
     currentColumnIndex: null,
     columnFilters: {}
 };
+

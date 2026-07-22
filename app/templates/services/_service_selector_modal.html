@@ -1,0 +1,92 @@
+<!-- templates/services/_service_selector_modal.html -->
+
+<div
+    class="modal fade"
+    id="serviceSelectorModal"
+    tabindex="-1"
+    aria-labelledby="serviceSelectorModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <!-- Заголовок -->
+            <div class="modal-header">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                        <h5 class="modal-title mb-0" id="serviceSelectorModalLabel">
+                            Выбор услуг
+                        </h5>
+                        <small id="serviceSelectorCounter"  class="text-muted">
+                            Выбрано: 0
+                        </small>
+                    </div>
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Закрыть">
+                    </button>
+                </div>
+            </div>
+            <!-- Тело -->
+            <div class="modal-body">
+                <!-- Панель фильтра -->
+                <div class="row g-3 mb-3">
+                    <!-- Поиск -->
+                    <div class="col-md-6">
+                        <label for="serviceSelectorSearch" class="form-label">
+                            Поиск
+                        </label>
+                        <input
+                            id="serviceSelectorSearch"
+                            type="text"
+                            class="form-control"
+                            placeholder="Введите название услуги...">
+                    </div>
+                    <!-- Группа -->
+                    <div class="col-md-6">
+                        <label for="serviceSelectorGroup" class="form-label">
+                            Группа услуг
+                        </label>
+                        <select id="serviceSelectorGroup" class="form-select">
+                            <!-- Заполняется через JS -->
+                        </select>
+                    </div>
+                </div>
+                <!-- Индикатор загрузки -->
+                <div
+                    id="serviceSelectorLoading"
+                    class="text-center py-5 d-none">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">
+                            Загрузка...
+                        </span>
+                    </div>
+                </div>
+                <!-- Нет результатов -->
+                <div id="serviceSelectorEmpty" class="alert alert-secondary d-none">
+                    Услуги не найдены.
+                </div>
+                <!-- Список услуг -->
+                <div id="serviceSelectorList" class="list-group">
+                    <!--
+                        Сюда render.js будет добавлять элементы 
+                    -->
+                </div>
+            </div>
+            <!-- Подвал -->
+            <div class="modal-footer">
+                <button type="button" 
+                        id="serviceSelectorCancel"
+                        class="btn btn-secondary" 
+                        data-bs-dismiss="modal">
+                    Отмена
+                </button>
+                <button type="button" 
+                        id="serviceSelectorSave" 
+                        class="btn btn-primary">
+                    Выбрать
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

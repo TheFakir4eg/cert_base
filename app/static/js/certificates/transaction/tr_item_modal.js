@@ -45,32 +45,75 @@ export function initTransactionItemModal() {
         calculateItemAmount();
     });
 
-    document
-        .getElementById("transactionItemQuantity")
-        .addEventListener(
-            "input",
-            calculateItemAmount
-        );
-
-
-    document
-        .getElementById("transactionItemPrice")
-        .addEventListener(
-            "input",
-            calculateItemAmount
-        );
+    document.getElementById("transactionItemQuantity").addEventListener("input", calculateItemAmount);
+    document.getElementById("transactionItemPrice").addEventListener( "input", calculateItemAmount);
 }
+
+// === НОВАЯ ФУНКЦИЯ: Управление состоянием поля цены ===
+export function applyPriceInputState() {
+    const priceInput = document.getElementById("transactionItemPrice");
+    if (!priceInput) return;
+
+    if (transaction.spending_type === 'count') {
+        priceInput.disabled = true;
+        priceInput.value = 0;
+    } else {
+        priceInput.disabled = false;
+        // Опционально: можно очищать значение, если тип не 'count'
+        // priceInput.value = ''; 
+    }
+    
+    // Пересчитываем сумму, так как значение цены могло измениться программно
+    calculateItemAmount();
+}
+
+// function loadServices(callback) {
+//     const url = transaction.servicegroup_id
+//                     ? `/api/services?servicegroup_id=${transaction.servicegroup_id}`
+//                     : "/api/services";
+//     fetch(url)
+//         .then(response => response.json())
+//         .then(data => {
+//             callback(data);
+//         });
+// }
 
 function loadServices(callback) {
-    const url = transaction.servicegroup_id
-                    ? `/api/services?servicegroup_id=${transaction.servicegroup_id}`
-                    : "/api/services";
+    // Проверяем, что ID сертификата установлен
+    if (!transaction.certificate_id) {
+        console.warn("certificate_id не установлен в state транзакции");
+        callback([]);
+        return;
+    }
+
+    // Формируем URL для получения услуг конкретного сертификата
+    const url = `/certificates/${transaction.certificate_id}/services`;
+    
     fetch(url)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Ошибка загрузки услуг сертификата");
+            }
+            return response.json();
+        })
         .then(data => {
-            callback(data);
+            // Приводим данные к формату, который ожидает TomSelect (id, name, code)
+            // Если ваш бэкенд уже возвращает плоский массив с такими полями, 
+            // этот map просто гарантирует безопасность типов.
+            const formattedServices = data.map(service => ({
+                id: service.id,
+                name: service.name,
+                code: service.code || "" // Защита от отсутствия code
+            }));
+            
+            callback(formattedServices);
+        })
+        .catch(error => {
+            console.error("Ошибка при загрузке услуг для сертификата:", error);
+            callback([]); // Возвращаем пустой массив при ошибке, чтобы TomSelect не завис
         });
 }
+
 
 export function prepareTransactionItemSelect() {
 
@@ -79,6 +122,10 @@ export function prepareTransactionItemSelect() {
     }
     serviceSelect.clear();
     serviceSelect.clearOptions();
+
+    // Применяем правила для поля цены перед открытием модалки
+    applyPriceInputState();
+
     serviceSelect.load(
         (callback) => {
             loadServices(callback);
@@ -118,7 +165,7 @@ form.addEventListener("submit", e => {
 export function resetTransactionItemModal() {
     selectedService = null;
     document.getElementById("transactionItemQuantity").value = 1;
-    document.getElementById("transactionItemPrice").value = '';
+    //document.getElementById("transactionItemPrice").value = '';
     document.getElementById("transactionItemAmount").value = "0.00";
 
     if (serviceSelect) {

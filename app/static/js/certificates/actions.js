@@ -9,12 +9,14 @@ import { openCreateClientModal } from "../clients/modal.js";
 import { initExpirationType } from "./form.js";
 import { initClientSelect } from "./selection.js";
 import { transactionClient } from "./transaction/tr_modal.js";
+import { getSelectedServices, renderSelectedServices, setEditMode, setCreateMode, setActiveForm } from "./services.js";
 
 const confirmModal = new bootstrap.Modal(document.getElementById("confirmActionModal"));
 const confirmText = document.getElementById("confirmActionModalText");
 const confirmBtn = document.getElementById("confirmActionModalBtn");
 const issueClient = initClientSelect("#issue_client");
 const spendClient = initClientSelect("#spend_client");
+
 
 // обработка двойного клика по строке  - вызов модалки "история транзакций"
 dom.tbody.addEventListener("dblclick", async (e) => {
@@ -168,53 +170,82 @@ export async function openTransactionHistory(certId) {
 
 // работа кнопки "Изменить"
 if (dom.editingBtn) {
-    dom.editingBtn.addEventListener("click", () => {
-        const modalElement = document.getElementById("editCertModal");
-        const modal = new bootstrap.Modal(modalElement);
-        const form = modalElement.querySelector("form");
+    dom.editingBtn.addEventListener("click", async () => {
+        console.log("Режим редактирования сертифаката");
+        try {
+            const modalElement = document.getElementById("editCertModal");
+            const modal = new bootstrap.Modal(modalElement);
+            const form = modalElement.querySelector("form");
 
-        const updateExpirationUI = initExpirationType(form);
-        if (!state.selectedRow) return;
+            setActiveForm(form);
 
-        //console.log(state.selectedRow.dataset);
+            const updateExpirationUI = initExpirationType(form);
+            if (!state.selectedRow) return;
 
-        const expirationType = form.querySelector("[name=expiration_type]");
-        const expirationDate = form.querySelector("[name=expiration_date]");
-        
-        form.querySelector("[name=cert_id]").value = state.selectedRow.dataset.id;
-        form.querySelector("[name=reason]").value = state.selectedRow.dataset.reason;
-        form.querySelector("[name=series]").value = state.selectedRow.dataset.series;
-        form.querySelector("[name=number]").value = state.selectedRow.dataset.number;
+            console.log(state.selectedRow.dataset);
 
-        form.querySelector("[name=place_id]").value = state.selectedRow.dataset.placeId;
-        form.querySelector("[name=issue_place_id]").value = state.selectedRow.dataset.issuePlaceId;
+            const certificateId = state.selectedRow.dataset.id;
+            
+            const response = await fetch(`/certificates/${certificateId}/services`);
 
-        form.querySelector("[name=mol_id]").value = state.selectedRow.dataset.molId;
-        
+            if (!response.ok) {
+                console.error("Ошибка загрузки услуг сертификата");
+                return;
+            }
 
-        form.querySelector("[name=is_single_use]").checked = state.selectedRow.dataset.isSingleUse === "True";
-        form.querySelector("[name=require_original]").checked = state.selectedRow.dataset.requireOriginal === "True";
-        form.querySelector("[name=require_stamp]").checked = state.selectedRow.dataset.requireStamp === "True";
-        form.querySelector("[name=max_50_percent]").checked = state.selectedRow.dataset.maxPercent === "True";
+            const services = await response.json();
 
-        form.querySelector("[name=total_amount]").value = state.selectedRow.dataset.totalAmount;
-        form.querySelector("[name=servicegroup_id]").value = state.selectedRow.dataset.servicegroupId;
-        form.querySelector("[name=note]").value = state.selectedRow.dataset.note;
+            setEditMode(services);
+            renderSelectedServices();
+            //console.log("services:", services);
+            // console.log(
+            //     "containers:",
+            //     document.querySelectorAll("#certificateServices")
+            // );
+            const expirationType = form.querySelector("[name=expiration_type]");
+            const expirationDate = form.querySelector("[name=expiration_date]");
 
-        if (state.selectedRow.dataset.expirationDate) {
-            expirationType.value = "date";
-            expirationDate.value = state.selectedRow.dataset.expirationDate;
-        } else {
-            expirationType.value = "unlimited";
+            form.querySelector("[name=cert_id]").value = state.selectedRow.dataset.id;
+            form.querySelector("[name=reason]").value = state.selectedRow.dataset.reason;
+            form.querySelector("[name=series]").value = state.selectedRow.dataset.series;
+            form.querySelector("[name=number]").value = state.selectedRow.dataset.number;
+
+            form.querySelector("[name=place_id]").value = state.selectedRow.dataset.placeId;
+            form.querySelector("[name=issue_place_id]").value = state.selectedRow.dataset.issuePlaceId;
+
+            form.querySelector("[name=mol_id]").value = state.selectedRow.dataset.molId;
+            
+            form.querySelector("[name=spending_type]").value = state.selectedRow.dataset.spendingType;
+            form.querySelector("[name=is_single_use]").checked = state.selectedRow.dataset.isSingleUse === "True";
+            form.querySelector("[name=require_original]").checked = state.selectedRow.dataset.requireOriginal === "True";
+            form.querySelector("[name=require_stamp]").checked = state.selectedRow.dataset.requireStamp === "True";
+            form.querySelector("[name=max_50_percent]").checked = state.selectedRow.dataset.maxPercent === "True";
+
+            form.querySelector("[name=total_amount]").value = state.selectedRow.dataset.totalAmount;
+            form.querySelector("[name=servicegroup_id]").value = state.selectedRow.dataset.servicegroupId;
+            form.querySelector("[name=note]").value = state.selectedRow.dataset.note;
+
+            if (state.selectedRow.dataset.expirationDate) {
+                expirationType.value = "date";
+                expirationDate.value = state.selectedRow.dataset.expirationDate;
+            } else {
+                expirationType.value = "unlimited";
+            }
+
+            updateExpirationUI();
+
+            //console.log(expirationType.value);
+            //console.log(expirationDate.value);
+            //console.log(form.querySelector("#expirationDateBlock"));
+
+            modal.show();
+        } catch (error) {
+            console.error(
+                "Ошибка загрузки данных сертификата:",
+                error
+            );
         }
-
-        updateExpirationUI();
-
-        //console.log(expirationType.value);
-        //console.log(expirationDate.value);
-        console.log(form.querySelector("#expirationDateBlock"));
-
-        modal.show();
+        
         
     });
 }
@@ -431,27 +462,50 @@ if (createForm) {
     //setupBulkFields();
     //setupNotNumberFields();
     setupCreateMode();
+
     createForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const errorBlock =
-            document.getElementById("createCertError");
+        // === DEBUG ПЕРЕД ОТПРАВКОЙ ===
+        // console.log("=== SUBMIT DEBUG ===");
+        // const serviceGroupSelect = createForm.querySelector('select[name="servicegroup_id"]');
+        // console.log("Select exists in submit:", !!serviceGroupSelect);
+        // if (serviceGroupSelect) {
+        //     console.log("Select value on submit:", serviceGroupSelect.value);
+        //     console.log("Selected option text:", serviceGroupSelect.options[serviceGroupSelect.selectedIndex]?.text);
+        // }
+
+        // const allNames = [...createForm.querySelectorAll('[name]')].map(el => el.name);
+        // console.log("All names on submit:", allNames);
+        // ========================
+        const errorBlock = document.getElementById("createCertError");
 
         errorBlock.classList.add("d-none");
         errorBlock.textContent = "";
 
         const formData = new FormData(createForm);
+        ensureFormData(formData, createForm);
+        // Фикс для servicegroup_id
+        // const sgSelect = document.querySelector('#createCertModal select[name="servicegroup_id"]') || 
+        //                 createForm.querySelector('select[name="servicegroup_id"]');
+        // if (sgSelect) {
+        //     formData.set('servicegroup_id', sgSelect.value || '');
+        //     console.log("Explicitly added servicegroup_id:", sgSelect.value);
+        // }
+        //-----
         const series = createForm.elements["series"].value.trim();
         const amount = createForm.elements["total_amount"].value.trim();
 
         const numbers = series.match(/\d+/g);
         const seriesAmount = numbers?.at(-1);
+        
+        const selectedServices = getSelectedServices();
+        console.log("selectedServices:", selectedServices);
 
-        // ---- отладочный блок
-        // for (const [key, value] of formData.entries()) {
-        //     console.log(key, value);
-        // }
-        // ---------
+        
+        selectedServices.forEach(service => {
+            formData.append("service_ids", service.id);
+        });
         if (!Number.isFinite(Number(amount))) {
             errorBlock.textContent = "Номинал должен содержать только цифры";
             errorBlock.classList.remove("d-none");
@@ -462,7 +516,7 @@ if (createForm) {
             errorBlock.classList.remove("d-none");
             return;
         }
-
+        //console.log("formData: ", formData);
         try {
             const response = await fetch("/certificates", {
                 method: "POST",
@@ -487,22 +541,24 @@ if (createForm) {
             // setTimeout(() => {
             //     location.reload();
             // }, 1000);
-
-            
-
         } catch (error) {
             errorBlock.textContent = "Ошибка соединения с сервером";
             errorBlock.classList.remove("d-none");
         }
     });
-    
 }
 
 const editForm = document.getElementById("editCertForm");
 
 if (editForm) {
     const seriesField = editForm.querySelector('input[name="series"]');
+    const spendingType = editForm.querySelector('select[name="spending_type"]');
+    
     seriesField.disabled = true;
+    spendingType.disabled = true;
+
+    //let selectedServices = [];
+
     setupModalReset(
         "editCertModal",
         "editCertForm",
@@ -518,10 +574,19 @@ if (editForm) {
         errorBlock.textContent = "";
 
         const formData = new FormData(editForm);
+        ensureFormData(formData, editForm);
+
         const series = editForm.elements["series"].value.trim();
         const amount = editForm.elements["total_amount"].value.trim();
         const numbers = series.match(/\d+/g);
         const seriesAmount = numbers?.at(-1);
+
+        const selectedServices = getSelectedServices();
+        console.log("selectedServices:", selectedServices);
+
+        selectedServices.forEach(service => {
+            formData.append("service_ids", service.id);
+        });
 
         if (!Number.isFinite(Number(amount))) {
             errorBlock.textContent = "Номинал должен содержать только цифры";
@@ -624,4 +689,29 @@ async function closeCertificate(certId, comment) {
     } else {
         alert(result.error || "Ошибка");
     }
+}
+
+// Вспомогательная функция для считывания и перезаписывания данных из формы (Bootstrap может терять данные)
+// function ensureFormData(formData, form) {
+//     form.querySelectorAll('select[name]').forEach(select => {
+//         formData.set(select.name, select.value || '');
+//     });
+// }
+// Добавляет в FormData отключённые поля,
+// которые стандартно исключаются браузером
+function ensureFormData(formData, form) {
+    form.querySelectorAll(
+        'input[name]:disabled, select[name]:disabled, textarea[name]:disabled'
+    ).forEach(field => {
+        if (
+            field.type === "checkbox" ||
+            field.type === "radio"
+        ) {
+            if (field.checked) {
+                formData.set(field.name, field.value);
+            }
+        } else {
+            formData.set(field.name, field.value || "");
+        }
+    });
 }

@@ -298,7 +298,7 @@
                             data-issue-place-id="{{ cert.issuing_place.id if cert.issuing_place else '' }}"
                             data-issue-place-name="{{ cert.issuing_place.name if cert.issuing_place else '' }}"
 
-                            data-servicegroup-id="{{ cert.servicegroup.id if cert.servicegroup else '' }}"
+                            data-servicegroup-id="{{ cert.servicegroup_id if cert.servicegroup_id else '' }}"
                             data-servicegroup-name="{{ cert.servicegroup.name if cert.servicegroup else '' }}"
 
                             data-creator-id="{{ cert.creator.id }}"
@@ -404,6 +404,7 @@
     <!-- Общие модальные окна, которые могут открываться поверх других -->
     <!-- ВСЕГДА в самом конце -->
     {% include "components/client_modal.html" %}
+    {% include "services/_service_selector_modal.html" %}
 {% endblock %}
 
 {% block scripts %}

@@ -1,5 +1,9 @@
 # app/models.py
 
+import os
+
+from flask import current_app
+
 from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -8,6 +12,7 @@ from app.utils.permission_registry import permission_exists
 from sqlalchemy.orm import validates
 from sqlalchemy import Numeric, func, UniqueConstraint
 from decimal import Decimal
+from pathlib import Path
 
 class Certificate(db.Model): # Модель для таблицы certificates
     """Сертификаты
@@ -108,6 +113,20 @@ class Certificate(db.Model): # Модель для таблицы certificates
         back_populates="certificate",
         cascade="all, delete-orphan",
         lazy=True
+    )
+    # связь с таблицей УслугиСертификата
+    certificate_services = db.relationship(
+        "CertificateService",
+        back_populates="certificate",
+        cascade="all, delete-orphan",
+        lazy=True
+    )
+    # связь с таблицей МакетСертификата
+    certificate_templates = db.relationship(
+        "CertificateTemplate",
+        back_populates="certificate",
+        cascade="all, delete-orphan",
+        lazy="selectin"
     )
     # сумма списаний
     # !!! потенциально опасное место
@@ -327,6 +346,12 @@ class ServiceGroup(db.Model):
         passive_deletes=True
     )
     
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name
+        }
+    
 class Client(db.Model):
     """Клиенты. Люди, которым выданы сетрификаты
 
@@ -472,6 +497,22 @@ class Services(db.Model):
         back_populates="service"
     )
     
+    @property
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "code": self.code,
+            "note": self.note,
+            "is_active": self.is_active,
+            "mis_id": self.mis_id,
+            "servicegroup_id": self.servicegroup_id,
+            "servicegroup": {
+                "id": self.servicegroup.id,
+                "name": self.servicegroup.name,
+            } if self.servicegroup else None
+        }
+    
 class CertificateTransaction(db.Model):
     __tablename__ = "certificate_transactions"
 
@@ -491,11 +532,7 @@ class CertificateTransaction(db.Model):
         index=True
     )
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("users.id"),
-        nullable=False
-    )
+    user_id = db.Column( db.Integer, db.ForeignKey("users.id"), nullable=False)
 
     created_at = db.Column(
         db.DateTime,
@@ -562,3 +599,78 @@ class CertificateTransactionItem(db.Model):
             f"{self.price}"
             f"{self.amount}>"
         )
+        
+class CertificateService(db.Model):
+    """ услуги, связанные с сертификатом
+
+    Args:
+        db (_type_): _description_
+    """
+    __tablename__ = "certificate_services"
+    __table_args__ = (
+        UniqueConstraint("certificate_id","service_id",name="uq_certificate_service"), #только одна уникальная услуга может быть добавлена
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    certificate_id = db.Column(db.Integer,db.ForeignKey("certificates.id", ondelete="CASCADE"),nullable=False)
+    service_id = db.Column(db.Integer,db.ForeignKey("services.id"),nullable=False)
+    service_count = db.Column(Numeric(10, 2), nullable=True)
+
+    certificate = db.relationship(
+        "Certificate",
+        back_populates="certificate_services"
+    )
+
+    service = db.relationship("Services")
+    
+class CertificateTemplate(db.Model):
+    """таблица для хранения пути до визуального макета сертификата. 
+        к одному сертификату может быть несколько макетов (передняя/задняя сторона) 
+
+    Args:
+        db (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    __tablename__ = "certificate_templates"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)           # понятное название
+    certificate_id = db.Column(db.Integer,db.ForeignKey("certificates.id", ondelete="CASCADE"),nullable=False)
+    folder_path = db.Column(db.String(500), nullable=False)   # абсолютный или относительный путь к папке
+    filename = db.Column(db.String(200), nullable=False)      # имя файла с расширением
+    sort_order = db.Column( db.Integer, default=0, nullable=False) # порядок сортировки
+    created_at = db.Column(db.DateTime, default=datetime.now) 
+    user_id = db.Column( db.Integer, db.ForeignKey("users.id"), nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+
+    certificate = db.relationship(
+        "Certificate",
+        back_populates="certificate_templates"
+    )
+    user = db.relationship( "User", foreign_keys=[user_id])
+    
+    @property
+    def full_path(self):
+        return (
+            Path(current_app.config["CERTIFICATE_TEMPLATES_PATH"])
+            / self.folder_path
+            / self.filename
+        )
+
+    @property
+    def exists(self):
+        path = self.full_path
+        return path.is_file()
+    
+    @property
+    def extension(self):
+        return self.full_path.suffix.lower()
+
+    @property
+    def is_image(self):
+        return self.extension in {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp"
+        }

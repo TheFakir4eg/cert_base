@@ -7,6 +7,7 @@ from flask_login import login_required
 from app import db
 from app.models import Certificate, Group, ServiceGroup, Services, User
 from app.utils.permissions import permission_required
+from sqlalchemy.orm import joinedload
 
 services_bp = Blueprint('services', __name__)
 
@@ -149,36 +150,41 @@ def edit_service():
 @login_required
 def get_services():
 
-    servicegroup_id = request.args.get(
-        "servicegroup_id",
-        type=int
-    )
+    group_id = request.args.get("group", type=int)
+    active = request.args.get("active", default=1, type=int)
 
     query = (
         Services.query
-        .filter(
-            Services.is_active.is_(True)
-        )
+        .options(joinedload(Services.servicegroup))
     )
 
-    if servicegroup_id:
+    if active:
+        query = query.filter(Services.is_active.is_(True))
+
+    if group_id:
         query = query.filter(
-            Services.servicegroup_id == servicegroup_id
+            Services.servicegroup_id == group_id
         )
 
     services = (
         query
-        .order_by(
-            Services.name
-        )
+        .order_by(Services.name)
+        .all()
+    )
+
+    return jsonify([service.to_dict for service in services])
+
+@services_bp.route("/api/servicegroups", methods=["GET"])
+@login_required
+def get_servicegroups():
+
+    groups = (
+        ServiceGroup.query
+        .order_by(ServiceGroup.name)
         .all()
     )
 
     return jsonify([
-        {
-            "id": service.id,
-            "name": service.name,
-            "code": service.code,
-        }
-        for service in services
+        group.to_dict()
+        for group in groups
     ])

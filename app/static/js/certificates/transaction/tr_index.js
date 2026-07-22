@@ -3,9 +3,9 @@
 import { renderTransaction } from "./tr_render.js";
 import { openTransactionModal, openTransactionItemModal, fillTransactionModal } from "./tr_modal.js";
 import { initTransactionItemModal, prepareTransactionItemSelect }from "./tr_item_modal.js";
-import { addItem } from "./tr_action.js";
+import { addItem, removeItem } from "./tr_action.js";
 import { eventBus } from "../../core/eventBus.js";
-import { transaction, clearTransaction } from "./tr_state.js";
+import { transaction, clearTransaction, loadCertificateInfo } from "./tr_state.js";
 
 initTransactionItemModal();
 //console.log("transaction module loaded");
@@ -16,11 +16,7 @@ export function initTransaction() {
 
 eventBus.on(
     "transaction:open",
-    ({
-        id,
-        balance,
-        servicegroupId
-    }) => {
+    async ({id, balance, servicegroupId}) => {
         clearTransaction();
         //console.log(transaction.items);
 
@@ -30,27 +26,14 @@ eventBus.on(
         transaction.balance = Number(balance);
         transaction.servicegroup_id = servicegroupId;
 
+        await loadCertificateInfo(id);
+
         prepareTransactionItemSelect();
         fillTransactionModal();
         renderTransaction();
         openTransactionModal();
     }
 );
-
-const testBtn = document.getElementById( "transactionTestAddBtn");
-
-if (testBtn) {
-    testBtn.addEventListener("click",() => {
-            addItem({
-                service_id: 1,
-                service_name: "Тестовая услуга",
-                quantity: 2,
-                price: 500,
-                amount: 1000
-            });
-        }
-    );
-}
 
 const addItemBtn = document.getElementById("transactionAddItemBtn");
 
@@ -59,3 +42,12 @@ if (addItemBtn) {
             openTransactionItemModal();
         });
 }
+
+transactionItems.addEventListener("click", (event) => {
+    const button = event.target.closest(".transaction-delete");
+    if (!button) {
+        return;
+    }
+    const index = Number(button.dataset.index);
+    removeItem(index);
+});

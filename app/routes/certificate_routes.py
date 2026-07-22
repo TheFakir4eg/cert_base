@@ -5,7 +5,7 @@ from flask import Blueprint, flash, jsonify, redirect, render_template, current_
 from flask_login import login_required,current_user
 from sqlalchemy import Cast, Integer, func
 from app import db
-from app.models import Certificate, CertificateSeries, CertificateUsage, Client, Place, ServiceGroup, User
+from app.models import Certificate, CertificateSeries, CertificateService, CertificateUsage, Client, Place, ServiceGroup, Services, User
 from app.services.transaction_service import create_transaction, get_certificate_transactions
 from app.utils.permissions import permission_required
 from app.services.certificate_service import get_certificate_usages, spend_certificate, validate_certificate_series
@@ -25,7 +25,6 @@ def list_certificates():
         action = request.form.get('action')
 
         if action == 'create':
-            #expiration_value = ''
             # Обработка формы создания сертификата
             reason = request.form.get('reason')
             series = request.form.get('series')
@@ -33,6 +32,7 @@ def list_certificates():
             place_id = int(request.form.get('place_id')) if request.form.get('place_id') else None
             mol_id = int(request.form.get('mol_id')) if request.form.get('mol_id') else None
             spending_type = request.form.get('spending_type')
+            service_ids = request.form.getlist('service_ids')
             require_original = request.form.get('require_original') is not None
             require_stamp = request.form.get('require_stamp') is not None
             is_single_use = request.form.get('is_single_use') is not None
@@ -87,6 +87,12 @@ def list_certificates():
                     "success": False,
                     "message": validation_error
                 }), 400
+            
+            if spending_type == "count" and not service_ids:
+                return jsonify({
+                    "success": False,
+                    "message": "Для сертификата с учетом в единицах необходимо выбрать услуги"
+                }), 400    
                 
             try:
                 # Конвертируем дату (если указана)
@@ -118,7 +124,14 @@ def list_certificates():
                 )
 
                 db.session.add(new_cert)
-                db.session.commit()
+                #db.session.commit()
+                db.session.flush()
+                
+                if spending_type == "count":
+                    for service_id in service_ids:
+                        db.session.add(CertificateService(certificate_id=new_cert.id,service_id=int(service_id)))        
+                    db.session.commit()
+                else: db.session.commit()
 
                 current_app.logger.info("=== CREATE CERTIFICATE ===")
 
@@ -152,6 +165,7 @@ def list_certificates():
             place_id = int(request.form.get('place_id')) if request.form.get('place_id') else None
             mol_id = int(request.form.get('mol_id')) if request.form.get('mol_id') else None
             spending_type = request.form.get('spending_type')
+            service_ids = request.form.getlist('service_ids')
             require_original = request.form.get('require_original') is not None
             require_stamp = request.form.get('require_stamp') is not None
             is_single_use = request.form.get('is_single_use') is not None
@@ -180,6 +194,12 @@ def list_certificates():
 
             else:
                 expiration_value = None
+                
+            if spending_type == "count" and not service_ids:
+                return jsonify({
+                    "success": False,
+                    "message": "Для сертификата с учетом в единицах необходимо выбрать услуги"
+                }), 400    
                 
             if not without_numbers:
                 start = int(request.form.get("first_number"))
@@ -292,8 +312,21 @@ def list_certificates():
                     )
 
                 db.session.add_all(certs)
-                db.session.commit()
+                #db.session.commit()
+                db.session.flush()
                 
+                if spending_type == "count":
+                    for cert in certs:
+                        for service_id in service_ids:
+                            db.session.add(
+                                CertificateService(
+                                    certificate_id=cert.id,
+                                    service_id=int(service_id)
+                                )
+                            )
+                    db.session.commit()
+                else: db.session.commit()
+
                 #count = end - start + 1
                 count = len(certs)
                 current_app.logger.info("=== CREATE BULK CERTIFICATE ===")
@@ -336,6 +369,7 @@ def list_certificates():
             max_50_percent = bool(request.form.get("max_50_percent"))
             total_amount = request.form.get('total_amount')
             servicegroup_id_str = request.form.get('servicegroup_id')
+            service_ids = request.form.getlist('service_ids')
             note = request.form.get('note')
             expiration_type = request.form.get('expiration_type')
             
@@ -416,6 +450,30 @@ def list_certificates():
                 )
 
                 cert.edit_user_id = int(current_user.id)
+                
+                if spending_type == "count":
+                    service_ids = request.form.getlist("service_ids")
+
+                    existing_service_ids = {
+                        certificate_service.service_id
+                        for certificate_service in cert.certificate_services
+                    }
+
+                    new_service_ids = {
+                        int(service_id)
+                        for service_id in service_ids
+                    }
+
+                    services_to_add = new_service_ids - existing_service_ids
+
+                    for service_id in services_to_add:
+                        db.session.add(
+                            CertificateService(
+                                certificate_id=cert.id,
+                                service_id=service_id
+                            )
+                        )
+                        
                 db.session.commit()
                 #current_app.logger.info(cert[])
                 current_app.logger.info(f"Обновлён сертификат ID={cert.id}")
@@ -446,13 +504,15 @@ def list_certificates():
     users = db.session.execute(db.select(User)).scalars().all()
     servicegroups = db.session.execute(db.select(ServiceGroup)).scalars().all()
     clients=db.session.execute(db.select(Client)).scalars().all()
+    services=db.session.execute(db.select(Services)).scalars().all()
     
     return render_template('certificates/list.html', 
                            certificates=certificates, 
                            places=places, 
                            users=users, 
                            servicegroups=servicegroups,
-                           clients=clients
+                           clients=clients,
+                           services=services
                            )
     
 @certificates_bp.route("/certificates/issue", methods=["POST"])
@@ -677,3 +737,51 @@ def create_certificate_transaction(certificate_id):
         }
         for tx in transactions
     ])
+    
+@certificates_bp.route("/certificates/<int:certificate_id>/services", methods=["GET"])
+@login_required
+#@permission_required("certificates_page")
+def get_certificate_services(certificate_id):
+
+    certificate = db.get_or_404(Certificate,certificate_id)
+
+    return jsonify([
+        {
+            "id": certificate_service.service.id,
+            "name": certificate_service.service.name,
+            "code": certificate_service.service.code,
+            "is_active": certificate_service.service.is_active,
+            "mis_id": certificate_service.service.mis_id
+        }
+        for certificate_service in certificate.certificate_services
+    ])
+    
+@certificates_bp.route("/certificates/<int:certificate_id>", methods=["GET"])
+@login_required
+def get_certificate_info(certificate_id):
+    certificate = db.get_or_404(Certificate, certificate_id)
+    
+    return jsonify({
+        # Основные поля сертификата
+        "id": certificate.id,
+        "number": certificate.number,
+        # Приводим дату к строковому формату ISO, иначе jsonify выдаст ошибку
+        "create_date": certificate.create_date.isoformat() if certificate.create_date else None,
+        "reason": certificate.reason,
+        "series": certificate.series,
+        "total_amount": certificate.total_amount,
+        "servicegroup_id": certificate.servicegroup_id,
+        "user_id": certificate.user_id,
+        "place_id": certificate.place_id,
+        "mol_id": certificate.mol_id,
+        "spending_type": certificate.spending_type,
+        "require_original": certificate.require_original,
+        "require_stamp": certificate.require_stamp,
+        "is_single_use": certificate.is_single_use,
+        "max_50_percent": certificate.max_50_percent,
+        # Для expiration_date используйте правильное имя поля из вашей модели 
+        # (в черновике было expiration_value, возможно это certificate.expiration_date)
+        #"expiration_type": certificate.expiration_type,
+        "expiration_date": certificate.expiration_date.isoformat() if certificate.expiration_date else None,
+        "note": certificate.note,
+    })

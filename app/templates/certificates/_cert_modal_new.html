@@ -67,9 +67,29 @@
                             <option value="count">На услуги поштучно</option>
                         </select>
                     </div>
-
+                        
                 </div>
+                <!-- услуги сертификата. Блок появляется только если выбран тип списания "услуги поштучно" -->
+                <div class="row mt-2" id="certificateServicesBlock">
+                    <div class="col-12">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0">
+                                Услуги сертификата
+                            </label>
 
+                            <button
+                                type="button"
+                                class="icon-btn-ghost"
+                                id="addCertificateService">
+                                <i class="bi bi-plus-circle"></i>
+                            </button>
+                        </div>
+                        <div
+                            id="certificateServices"
+                            class="list-group mt-2">
+                        </div>
+                    </div>
+                </div>
                 <!-- Средний блок -->
                 <div class="cert-middle-row">
 

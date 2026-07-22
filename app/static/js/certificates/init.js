@@ -1,20 +1,53 @@
 // /app/static/js/init.js
 
-// import { state } from "./state.js";
-// import * as dom from "./dom.js";
-import { initExpirationType } from "./form.js";
-import {
-    applyFilter,
-    getCurrentFilter
-} from "./filters.js";
+import { initExpirationType, initSpendingType } from "./form.js";
+import { applyFilter, getCurrentFilter } from "./filters.js";
 import { showFlash } from "../utils.js";
+import * as ServiceSelector from "../services/selector/index.js";
+import * as CertificateServices from "./services.js";
 
 
 document.addEventListener("DOMContentLoaded", () => {
     const createForm = document.querySelector("#createCertModal form");
+    const editForm = document.querySelector( "#editCertModal form");
 
+    ServiceSelector.init();
+    CertificateServices.init(createForm);
+    CertificateServices.init(editForm);
+
+    //----
+    // тестовый ввод. В консоли ввести testSelector(). Откроется модалка
+    // window.testSelector = (options = {}) => {
+    //     ServiceSelector.open(options);
+    // };
+    //------
     if (createForm) {
-        initExpirationType(createForm);
+        const updateExpiration = initExpirationType(createForm);
+        const updateSpending = initSpendingType(createForm);
+
+        const modal = document.querySelector("#createCertModal");
+        // сбрасываем состояние вложенных элементов при открытии модалки
+        modal?.addEventListener(
+            "show.bs.modal",
+            () => {
+                CertificateServices.setCreateMode();
+                CertificateServices.setActiveForm(createForm);
+                CertificateServices.renderSelectedServices();
+            }
+        );
+        // сбрасываем состояние вложенных элементов при закрытии модалки
+        modal?.addEventListener(
+            "hidden.bs.modal",
+            () => {
+                createForm.reset();
+
+                CertificateServices.reset();
+                CertificateServices.setCreateMode();
+                CertificateServices.setActiveForm(createForm);
+                updateExpiration();
+                updateSpending();
+            }
+        );
     }
     const message = sessionStorage.getItem("flashSuccess");
 

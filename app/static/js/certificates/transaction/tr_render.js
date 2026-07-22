@@ -65,14 +65,7 @@ function createItemRow(item, index) {
                     ${Number(item.amount).toFixed(2)}
                 </small>
             </div>
-            <div class="btn-group btn-group-sm">
-                <button
-                    type="button"
-                    class="btn btn-outline-secondary transaction-edit"
-                    data-index="${index}"
-                    title="Редактировать">
-                    <i class="bi bi-pencil"></i>
-                </button>
+            <div>    
                 <button
                     type="button"
                     class="btn btn-outline-danger transaction-delete"
