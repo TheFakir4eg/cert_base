@@ -10,6 +10,7 @@ import { initExpirationType } from "./form.js";
 import { initClientSelect } from "./selection.js";
 import { transactionClient } from "./transaction/tr_modal.js";
 import { getSelectedServices, renderSelectedServices, setEditMode, setCreateMode, setActiveForm } from "./services.js";
+import { initCertificateTemplates } from "./cert_templates/ct_init.js";
 
 const confirmModal = new bootstrap.Modal(document.getElementById("confirmActionModal"));
 const confirmText = document.getElementById("confirmActionModalText");
@@ -17,6 +18,10 @@ const confirmBtn = document.getElementById("confirmActionModalBtn");
 const issueClient = initClientSelect("#issue_client");
 const spendClient = initClientSelect("#spend_client");
 
+const createForm = document.getElementById("createCertForm");
+const createTemplateComponent = initCertificateTemplates(createForm );
+const editForm = document.getElementById("editCertForm");
+const editTemplateComponent = initCertificateTemplates( editForm );
 
 // обработка двойного клика по строке  - вызов модалки "история транзакций"
 dom.tbody.addEventListener("dblclick", async (e) => {
@@ -197,6 +202,7 @@ if (dom.editingBtn) {
 
             setEditMode(services);
             renderSelectedServices();
+            await editTemplateComponent.load( certificateId);
             //console.log("services:", services);
             // console.log(
             //     "containers:",
@@ -451,7 +457,6 @@ if (dom.restoreBtn) {
 }
 
 // создание сертификата
-const createForm = document.getElementById("createCertForm");
 
 if (createForm) {
     setupModalReset(
@@ -466,18 +471,6 @@ if (createForm) {
     createForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        // === DEBUG ПЕРЕД ОТПРАВКОЙ ===
-        // console.log("=== SUBMIT DEBUG ===");
-        // const serviceGroupSelect = createForm.querySelector('select[name="servicegroup_id"]');
-        // console.log("Select exists in submit:", !!serviceGroupSelect);
-        // if (serviceGroupSelect) {
-        //     console.log("Select value on submit:", serviceGroupSelect.value);
-        //     console.log("Selected option text:", serviceGroupSelect.options[serviceGroupSelect.selectedIndex]?.text);
-        // }
-
-        // const allNames = [...createForm.querySelectorAll('[name]')].map(el => el.name);
-        // console.log("All names on submit:", allNames);
-        // ========================
         const errorBlock = document.getElementById("createCertError");
 
         errorBlock.classList.add("d-none");
@@ -485,27 +478,23 @@ if (createForm) {
 
         const formData = new FormData(createForm);
         ensureFormData(formData, createForm);
-        // Фикс для servicegroup_id
-        // const sgSelect = document.querySelector('#createCertModal select[name="servicegroup_id"]') || 
-        //                 createForm.querySelector('select[name="servicegroup_id"]');
-        // if (sgSelect) {
-        //     formData.set('servicegroup_id', sgSelect.value || '');
-        //     console.log("Explicitly added servicegroup_id:", sgSelect.value);
-        // }
-        //-----
+
         const series = createForm.elements["series"].value.trim();
         const amount = createForm.elements["total_amount"].value.trim();
 
         const numbers = series.match(/\d+/g);
         const seriesAmount = numbers?.at(-1);
         
+        // Услуги
         const selectedServices = getSelectedServices();
-        console.log("selectedServices:", selectedServices);
+        //console.log("selectedServices:", selectedServices);
+        selectedServices.forEach(service => { formData.append("service_ids", service.id);});
 
-        
-        selectedServices.forEach(service => {
-            formData.append("service_ids", service.id);
-        });
+        // Макеты
+        const pendingTemplates = createTemplateComponent.getPendingTemplates();
+        console.log(pendingTemplates);
+        formData.append( "templates", JSON.stringify(pendingTemplates));
+
         if (!Number.isFinite(Number(amount))) {
             errorBlock.textContent = "Номинал должен содержать только цифры";
             errorBlock.classList.remove("d-none");
@@ -548,7 +537,6 @@ if (createForm) {
     });
 }
 
-const editForm = document.getElementById("editCertForm");
 
 if (editForm) {
     const seriesField = editForm.querySelector('input[name="series"]');
@@ -582,11 +570,15 @@ if (editForm) {
         const seriesAmount = numbers?.at(-1);
 
         const selectedServices = getSelectedServices();
-        console.log("selectedServices:", selectedServices);
+        //console.log("selectedServices:", selectedServices);
+        selectedServices.forEach(service => { formData.append("service_ids", service.id);});
 
-        selectedServices.forEach(service => {
-            formData.append("service_ids", service.id);
-        });
+        // Макеты
+        const pendingTemplates = editTemplateComponent.getPendingTemplates();
+        formData.append( "templates", JSON.stringify(pendingTemplates));
+        // получаем макеты, помеченные на удаление
+        const deletedIds = editTemplateComponent.getDeletedTemplateIds(); // Получаем массив ID
+        formData.append('deleted_template_ids', JSON.stringify(deletedIds));
 
         if (!Number.isFinite(Number(amount))) {
             errorBlock.textContent = "Номинал должен содержать только цифры";

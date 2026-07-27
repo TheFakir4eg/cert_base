@@ -200,31 +200,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         // успех
         if (data.success) {
-
             showFlash(data.message);
-
             const modal = bootstrap.Modal.getInstance(els.modal);
-
             modal.hide();
-
                 if (els.formActionInput.value === "create") {
-
                     els.modal.addEventListener(
                         "hidden.bs.modal",
                         () => addUserToList(data.user),
                         { once: true }
                     );
-
                 } else {
-
                     els.modal.addEventListener(
                         "hidden.bs.modal",
                         () => updateUserInList(data.user),
                         { once: true }
                     );
-
                 }
         }
-        
     });
 });

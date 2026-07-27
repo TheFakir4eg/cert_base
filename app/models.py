@@ -14,7 +14,12 @@ from sqlalchemy import Numeric, func, UniqueConstraint
 from decimal import Decimal
 from pathlib import Path
 
-class Certificate(db.Model): # Модель для таблицы certificates
+
+class TimestampMixin:
+    create_date = db.Column(db.DateTime, default=lambda: datetime.now())
+    edit_date = db.Column(db.DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now())
+    
+class Certificate(db.Model, TimestampMixin): # Модель для таблицы certificates
     """Сертификаты
         Основная таблица БД
 
@@ -31,7 +36,7 @@ class Certificate(db.Model): # Модель для таблицы certificates
     )
     id = db.Column(db.Integer, primary_key=True)
     # создание сертификата
-    create_date = db.Column(db.DateTime, default=lambda: datetime.now()) # Дата создания. Записывается в бд автоматически. 
+    #create_date = db.Column(db.DateTime, default=lambda: datetime.now()) # Дата создания. Записывается в бд автоматически. 
     reason = db.Column(db.String(100), nullable=True) # Причина создания сертификата
     series = db.Column(db.String(20), nullable=False) # серия сертификата 
     number = db.Column(db.String(20), nullable=True) # номер сертификата
@@ -47,7 +52,7 @@ class Certificate(db.Model): # Модель для таблицы certificates
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=True) # Внешний ключ, держатель сертификата (клиент, которому его выдали)
     spending_client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=True) # Внешний ключ, клиент, который расплачивается сертификатом
     #редактирование
-    edit_date = db.Column(db.DateTime, default=lambda: datetime.now(), onupdate=datetime.now()) # Дата изменения. Записывается в бд автоматически. 
+    #edit_date = db.Column(db.DateTime, default=lambda: datetime.now(), onupdate=datetime.now()) # Дата изменения. Записывается в бд автоматически. 
     edit_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Внешний ключ, пользователь, изменивший сертификат. Может отличаться от создателя
     # финансы
     total_amount = db.Column(Numeric(10,2), nullable=False)
@@ -122,11 +127,29 @@ class Certificate(db.Model): # Модель для таблицы certificates
         lazy=True
     )
     # связь с таблицей МакетСертификата
+    # старая версия проекта! готовится к удалению
     certificate_templates = db.relationship(
         "CertificateTemplate",
         back_populates="certificate",
         cascade="all, delete-orphan",
         lazy="selectin"
+    )
+    #====================
+    # Новая версия связи макета с сертификатом
+    template_links = db.relationship(
+        "CertificateTemplateLink",
+        back_populates="certificate",
+        cascade="all, delete-orphan",
+        lazy="selectin"
+    )
+
+    template_versions = db.relationship(
+        "TemplateVersion",
+        secondary="certificate_template_links",
+        back_populates="certificates"
+        ,lazy="selectin"
+        ,overlaps="template_links"
+        #,overlaps="certificate_links,template_links"
     )
     # сумма списаний
     # !!! потенциально опасное место
@@ -178,7 +201,7 @@ class Certificate(db.Model): # Модель для таблицы certificates
     def __repr__(self):
         return f'<Certificate {self.number}>'
     
-class User(db.Model, UserMixin): 
+class User(db.Model, UserMixin, TimestampMixin): 
     """таблица пользователей
 
     Args:
@@ -192,14 +215,23 @@ class User(db.Model, UserMixin):
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True) # Внешний ключ, группы прав пользователя
     place_id = db.Column(db.Integer, db.ForeignKey('places.id'), nullable=True) # Внешний ключ, место работы пользователя
     note = db.Column(db.String(250), nullable=True)
-    create_date = db.Column(db.DateTime, default=lambda: datetime.now())
+    #create_date = db.Column(db.DateTime, default=lambda: datetime.now())
     active = db.Column(db.Boolean, default=True, nullable=False) # статус активности учетной записи
-    
+    created_by = db.Column(
+        db.Integer, 
+        db.ForeignKey('users.id', ondelete='SET NULL'), 
+        nullable=True
+    )
     # Отношение "многие к одному": многие пользователи принадлежат одной группе
     # используем back_populates='users', которое ссылается на атрибут в Group
     user_group = db.relationship('Group', back_populates='users') 
     user_place = db.relationship('Place', back_populates='users') 
-    
+    # Самоссылающееся отношение: кто создал этого пользователя
+    creator = db.relationship(
+        'User', 
+        foreign_keys=[created_by], # Указываем, какое именно поле является FK
+        remote_side=[id]           # Указываем, на какой столбец мы ссылаемся
+    )
     # Метод для установки пароля (хранится как хеш)
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -231,7 +263,7 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return f'<User {self.name}>'
     
-class Group(db.Model): 
+class Group(db.Model, TimestampMixin): 
     """группы прав пользователей
 
     Args:
@@ -256,7 +288,7 @@ class Group(db.Model):
     def __repr__(self):
         return f'<Group {self.text}>'
 
-class GroupPermission(db.Model):
+class GroupPermission(db.Model, TimestampMixin):
     """Связь групп и разрешений (many-to-many через строку permission_name)"""
     __tablename__ = "group_permissions"
 
@@ -278,7 +310,7 @@ class GroupPermission(db.Model):
         return f"<GroupPermission {self.group_id}:{self.permission_name}>"
 
 
-class Place(db.Model): # Модель для таблицы places
+class Place(db.Model, TimestampMixin): # Модель для таблицы places
     """место выдачи сертификата
 
     Args:
@@ -321,7 +353,7 @@ class Place(db.Model): # Модель для таблицы places
     
 
             
-class ServiceGroup(db.Model):
+class ServiceGroup(db.Model, TimestampMixin):
     """_summary_
 
     Args:
@@ -352,7 +384,7 @@ class ServiceGroup(db.Model):
             "name": self.name
         }
     
-class Client(db.Model):
+class Client(db.Model, TimestampMixin):
     """Клиенты. Люди, которым выданы сетрификаты
 
     Args:
@@ -361,13 +393,10 @@ class Client(db.Model):
     __tablename__ = 'clients'
     
     id = db.Column(db.Integer, primary_key=True)
-    
     name = db.Column(db.String(50), nullable=False)
-    
     lastName = db.Column(db.String(50), nullable=True)
     firstName = db.Column(db.String(50), nullable=True)
     secondName = db.Column(db.String(50), nullable=True)
-
     phone = db.Column(db.String(12), nullable=True)
     email = db.Column(db.String(50), nullable=True)
     externalId = db.Column(db.String(50), nullable=True)
@@ -410,7 +439,7 @@ class Client(db.Model):
             "note": self.note,
         }
     
-class CertificateUsage(db.Model):
+class CertificateUsage(db.Model, TimestampMixin):
     """Операции списания средств с сертификата"""
     __tablename__ = "certificate_usages"
 
@@ -429,11 +458,11 @@ class CertificateUsage(db.Model):
     amount = db.Column(Numeric(10,2), nullable=False)  # сумма списания
     comment = db.Column(db.String(255), nullable=True)
 
-    created_at = db.Column(
-        db.DateTime,
-        default=lambda: datetime.now(),
-        nullable=False
-    )
+    # created_at = db.Column(
+    #     db.DateTime,
+    #     default=lambda: datetime.now(),
+    #     nullable=False
+    # )
 
     user_id = db.Column(
         db.Integer,
@@ -449,7 +478,7 @@ class CertificateUsage(db.Model):
     def __repr__(self):
         return f"<CertificateUsage cert={self.certificate_id} amount={self.amount}>"
     
-class CertificateSeries(db.Model):
+class CertificateSeries(db.Model, TimestampMixin):
     """
     Служебная таблица для учета безномерных сертификатов.
 
@@ -464,7 +493,7 @@ class CertificateSeries(db.Model):
     last_number = db.Column(db.Integer, nullable=False, default=0)
     max_number = db.Column(db.Integer, nullable=True)
     
-class Services(db.Model):
+class Services(db.Model, TimestampMixin):
     """_summary_
 
     Args:
@@ -475,14 +504,7 @@ class Services(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(250), nullable=False)
     code = db.Column(db.String(20), unique=True, nullable=True)
-    
-    servicegroup_id = db.Column(
-        db.Integer,
-        db.ForeignKey("servicegroup.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
-
+    servicegroup_id = db.Column( db.Integer, db.ForeignKey("servicegroup.id", ondelete="CASCADE"), nullable=False, index=True)
     note = db.Column(db.String(250))
     is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
     mis_id = db.Column(db.String(20), unique=True, nullable=True)
@@ -513,35 +535,16 @@ class Services(db.Model):
             } if self.servicegroup else None
         }
     
-class CertificateTransaction(db.Model):
+class CertificateTransaction(db.Model, TimestampMixin):
     __tablename__ = "certificate_transactions"
 
     id = db.Column(db.Integer, primary_key=True)
-
-    certificate_id = db.Column(
-        db.Integer,
-        db.ForeignKey("certificates.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
-
-    client_id = db.Column(
-        db.Integer,
-        db.ForeignKey("clients.id", ondelete="CASCADE"),
-        nullable=True,
-        index=True
-    )
-
+    certificate_id = db.Column( db.Integer, db.ForeignKey("certificates.id", ondelete="CASCADE"), nullable=False, index=True)
+    client_id = db.Column( db.Integer, db.ForeignKey("clients.id", ondelete="CASCADE"), nullable=True, index=True)
     user_id = db.Column( db.Integer, db.ForeignKey("users.id"), nullable=False)
-
-    created_at = db.Column(
-        db.DateTime,
-        default=datetime.now,
-        nullable=False,
-        index=True
-    )
-
+    #created_at = db.Column( db.DateTime, default=datetime.now, nullable=False, index=True)
     comment = db.Column(db.String(255))
+    
     certificate = db.relationship( "Certificate", back_populates="transactions")
     client = db.relationship( "Client", foreign_keys=[client_id])
     user = db.relationship( "User", foreign_keys=[user_id])
@@ -556,25 +559,12 @@ class CertificateTransaction(db.Model):
         return f"<CertificateTransaction {self.id}>"
 
     
-class CertificateTransactionItem(db.Model):
+class CertificateTransactionItem(db.Model, TimestampMixin):
     __tablename__ = "certificate_transaction_items"
 
     id = db.Column(db.Integer, primary_key=True)
-
-    transaction_id = db.Column(
-        db.Integer,
-        db.ForeignKey("certificate_transactions.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
-
-    service_id = db.Column(
-        db.Integer,
-        db.ForeignKey("services.id"),
-        nullable=False,
-        index=True
-    )
-    
+    transaction_id = db.Column( db.Integer, db.ForeignKey("certificate_transactions.id", ondelete="CASCADE"), nullable=False, index=True)
+    service_id = db.Column( db.Integer, db.ForeignKey("services.id"), nullable=False, index=True)
     service_name = db.Column( db.String(250), nullable=False)
     quantity = db.Column( Numeric(10, 2), default=1, nullable=False)
     price = db.Column(Numeric(10, 2), nullable=False)
@@ -600,7 +590,7 @@ class CertificateTransactionItem(db.Model):
             f"{self.amount}>"
         )
         
-class CertificateService(db.Model):
+class CertificateService(db.Model, TimestampMixin):
     """ услуги, связанные с сертификатом
 
     Args:
@@ -622,7 +612,7 @@ class CertificateService(db.Model):
 
     service = db.relationship("Services")
     
-class CertificateTemplate(db.Model):
+class CertificateTemplate(db.Model, TimestampMixin):
     """таблица для хранения пути до визуального макета сертификата. 
         к одному сертификату может быть несколько макетов (передняя/задняя сторона) 
 
@@ -639,7 +629,7 @@ class CertificateTemplate(db.Model):
     folder_path = db.Column(db.String(500), nullable=False)   # абсолютный или относительный путь к папке
     filename = db.Column(db.String(200), nullable=False)      # имя файла с расширением
     sort_order = db.Column( db.Integer, default=0, nullable=False) # порядок сортировки
-    created_at = db.Column(db.DateTime, default=datetime.now) 
+    #created_at = db.Column(db.DateTime, default=datetime.now) 
     user_id = db.Column( db.Integer, db.ForeignKey("users.id"), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
 
@@ -674,3 +664,129 @@ class CertificateTemplate(db.Model):
             ".png",
             ".webp"
         }
+        
+    @property
+    def is_valid_path(self):
+        base_path = Path(
+            current_app.config[
+                "CERTIFICATE_TEMPLATES_PATH"
+            ]
+        ).resolve()
+
+        file_path = self.full_path.resolve()
+
+        try:
+            file_path.relative_to(base_path)
+            return True
+        except ValueError:
+            return False
+        
+class AuditLog(db.Model, TimestampMixin):
+    __tablename__ = 'audit_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    action = db.Column(db.String(50), nullable=False)          # create, update, delete, spend, issue...
+    entity_type = db.Column(db.String(100), nullable=False)    # 'Certificate'
+    entity_id = db.Column(db.Integer, nullable=True)
+    place_id = db.Column(db.Integer, db.ForeignKey('places.id'), nullable=True)
+    
+    old_data = db.Column(db.JSON, nullable=True)   # до изменений
+    new_data = db.Column(db.JSON, nullable=True)   # после
+    ip_address = db.Column(db.String(45), nullable=True)
+    user_agent = db.Column(db.String(255), nullable=True)
+    comment = db.Column(db.Text, nullable=True)
+    
+    #created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    
+    user = db.relationship('User', backref='audit_logs')
+    place = db.relationship('Place')
+    
+class Template(db.Model, TimestampMixin):
+    __tablename__ = "templates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column( db.String(150), nullable=False)
+    code = db.Column( db.String(100), nullable=False, unique=True)
+    description = db.Column( db.Text, nullable=True)
+    #created_at = db.Column( db.DateTime, nullable=False, default=datetime.now)
+    #updated_at = db.Column( db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+    
+    versions = db.relationship(
+        "TemplateVersion",
+        back_populates="template",
+        cascade="all, delete-orphan",
+        order_by="TemplateVersion.version"
+    )
+    
+class TemplateVersion(db.Model, TimestampMixin):
+    __tablename__ = "template_versions"
+
+    id = db.Column( db.Integer, primary_key=True)
+    template_id = db.Column( db.Integer, db.ForeignKey("templates.id"), nullable=False)
+    version = db.Column( db.Integer, nullable=False)
+    folder_path = db.Column( db.String(500), nullable=False)
+    filename = db.Column( db.String(255), nullable=False)
+    mime_type = db.Column( db.String(100), nullable=True)
+    file_size = db.Column( db.Integer, nullable=True)
+    is_active = db.Column( db.Boolean, nullable=False, default=True)
+    #created_at = db.Column( db.DateTime, nullable=False, default=datetime.now)
+    created_by = db.Column( db.Integer, db.ForeignKey("users.id"), nullable=True)
+    
+    template = db.relationship(
+        "Template",
+        back_populates="versions"
+    )
+
+    certificates = db.relationship(
+        "Certificate",
+        secondary="certificate_template_links",
+        back_populates="template_versions"
+        ,lazy="selectin"
+        ,overlaps="template_links"
+    )
+
+    certificate_links = db.relationship(
+        "CertificateTemplateLink",
+        back_populates="template_version",
+        cascade="all, delete-orphan",
+        overlaps="certificates,template_versions"
+    )
+
+    creator = db.relationship(
+        "User",
+        foreign_keys=[created_by]
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "template_id",
+            "version",
+            name="uq_template_version"
+        ),
+    )
+    
+class CertificateTemplateLink(db.Model, TimestampMixin):
+    __tablename__ = "certificate_template_links"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "certificate_id",
+            "template_version_id",
+            name="uq_certificate_template_version"
+        ),
+    )
+    certificate_id = db.Column( db.Integer, db.ForeignKey("certificates.id"), primary_key=True)
+    template_version_id = db.Column( db.Integer, db.ForeignKey("template_versions.id"), primary_key=True)
+
+    certificate = db.relationship(
+        "Certificate",
+        back_populates="template_links"
+        ,overlaps="certificates,template_versions"
+        #overlaps="certificate_links,template_links"
+    )
+
+    template_version = db.relationship(
+        "TemplateVersion",
+        back_populates="certificate_links"
+        ,overlaps="certificates,template_versions"
+    )

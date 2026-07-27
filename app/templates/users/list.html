@@ -3,13 +3,16 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h2>Список пользователей</h2>
-
-    <!-- Кнопка для открытия модального окна (для создания) -->
-    <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createUserModal" id="openCreateModalBtn">
-        Создать пользователя
-    </button>
-
+    <div class="d-flex flex-column align-items-start mb-3">
+        <h2>Список пользователей</h2>
+        <div class="d-flex gap-2">
+            <!-- Кнопка для открытия модального окна (для создания) -->
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal" id="openCreateModalBtn">
+                Создать пользователя
+            </button>
+            <a href="{{ url_for('settings.settings') }}" class="btn btn-secondary">Назад</a>
+        </div>
+    </div>
     <ul class="list-group" id="usersList">
         {% for user in users %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -32,7 +35,7 @@
             </li>
         {% endfor %}
     </ul>
-    <a href="{{ url_for('settings.settings') }}" class="btn btn-secondary mt-3">Назад</a>
+    
 </div>
 
 <!-- Модальное окно для создания/редактирования пользователя -->

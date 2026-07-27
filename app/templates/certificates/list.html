@@ -34,10 +34,13 @@
                 </button>
                 {% endif %}
                 {% if current_user.has_permission('certificates_spend') %}
-                <button type="button" 
-                        class="btn btn-info mb-3" 
-                        id="spendCertBtn"
-                        disabled>
+                <button
+                    class="btn btn-info mb-3 transaction-open"
+                    id="transactionCertBtn"
+                    data-id="{{ certificates.id }}"
+                    data-servicegroup="{{ certificates.servicegroup_id }}"
+                    data-balance="{{ certificates.balance }}"
+                    disabled>
                     Списание
                 </button>
                 {% endif %}
@@ -57,14 +60,7 @@
                     Восстановление
                 </button>
                 {% endif %}
-                <button
-                    class="btn btn-info mb-3 transaction-open"
-                    id="transactionCertBtn"
-                    data-id="{{ certificates.id }}"
-                    data-servicegroup="{{ certificates.servicegroup_id }}"
-                    data-balance="{{ certificates.balance }}">
-                    Списать
-                </button>
+                <a href="{{ url_for('auth.index') }}" class="btn btn-secondary mb-3">Назад</a>
             </div>
 
             <div class="ms-auto search-container">
@@ -403,6 +399,8 @@
     <!-- Модальное окно создания клиента внутри модалки выдачи сертификата --> 
     <!-- Общие модальные окна, которые могут открываться поверх других -->
     <!-- ВСЕГДА в самом конце -->
+
+    {% include "certificates/_certificate_template_select_modal.html" %}
     {% include "components/client_modal.html" %}
     {% include "services/_service_selector_modal.html" %}
 {% endblock %}

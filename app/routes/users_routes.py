@@ -1,5 +1,6 @@
 # app/routes/users_routes.py
 import re
+from app.utils.audit import audit_create, audit_update
 
 from flask import Blueprint, render_template, current_app, request, flash, redirect, url_for, jsonify # Добавим jsonify, если будем использовать AJAX
 from flask_login import current_user, login_required
@@ -56,6 +57,9 @@ def list_users():
                     new_user.active = True
 
                     db.session.add(new_user)
+                    db.session.flush()          # ← важно!
+                    # Теперь логируем с реальным ID
+                    audit_create(user)   
                     db.session.commit()
 
                     current_app.logger.info(f"Создан пользователь: {new_user.name}")
@@ -94,6 +98,14 @@ def list_users():
                     if not group:
                         flash('❌ Выбранная группа не существует.', 'danger')
                         return redirect(url_for('users.list_users'))
+                    
+                    old_data = {
+                        "login": user.login,
+                        "name": user.name,
+                        "group_id": user.group_id,
+                        "place_id": user.place_id,
+                        "active": user.active,
+                    }
 
                     # Обновим данные пользователя
                     user.name = name
@@ -104,8 +116,11 @@ def list_users():
                     # Обновим пароль, если он был введён
                     if new_password:
                         user.set_password(new_password)
-
+                    db.session.flush()   # Получаем актуальное состояние
+                    
+                    audit_update(old_data, user, comment="Пароль изменён" if password else None)
                     db.session.commit()
+                    
                     current_app.logger.info(f"Обновлён пользователь: {user.name}")
                     flash(f'✅ Пользователь "{user.name}" успешно обновлён!', 'success')
 
@@ -146,14 +161,17 @@ def create_user():
             group_id=data["group_id"],
             place_id=data.get("place_id"),
             active=True
-        )
-
-        
+        )   
         user.set_password(data["password"])
 
         db.session.add(user)
+        # Получаем ID до коммита
+        db.session.flush()          # ← важно!
+        # Теперь логируем с реальным ID
+        audit_create(user)      
         db.session.commit()
 
+        
         return jsonify({
             "success": True,
             "message": "Пользователь создан",
@@ -194,7 +212,7 @@ def edit_user():
     group_id=data["group_id"]
     place_id=data.get("place_id")
     password=data.get("password")
-    active=True
+    active = data.get("active", True)
     
     if not re.fullmatch(r"[a-zA-Z0-9._-]+", login):
         return jsonify({
@@ -234,19 +252,36 @@ def edit_user():
                             "success": False,
                             "error": "Место не найдено"
                         }), 400
+                    
+                    # === Сохраняем старые данные для аудита ===
+                    old_data = {
+                        "login": edit_user.login,
+                        "name": edit_user.name,
+                        "group_id": edit_user.group_id,
+                        "place_id": edit_user.place_id,
+                        "active": edit_user.active,
+                    }
+                    # ===========================================
                         
-                                        # Обновим данные пользователя
+                    # Обновим данные пользователя
                     edit_user.name = name
                     edit_user.login = login
                     edit_user.group_id = int(group_id)
                     edit_user.place_id = int(place_id)
                     # Обновим статус активности
-                    edit_user.active = (active == 'on') # 'on' если чекбокс активен, иначе False
+                    edit_user.active = bool(active)
 
                     # Обновим пароль, если он был введён
                     if password:
                         edit_user.set_password(password)
 
+                    db.session.flush()   # Получаем актуальное состояние
+
+                    # === Логирование изменений ===
+                    #from app.utils.audit import log_action
+
+                    audit_update(old_data, edit_user, comment="Пароль изменён" if password else None)
+                    # ===========================================
                     db.session.commit()
                     current_app.logger.info(f"Обновлён пользователь: {name}")
                     return jsonify({

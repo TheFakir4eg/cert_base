@@ -5,22 +5,23 @@ import { applyFilter, getCurrentFilter } from "./filters.js";
 import { showFlash } from "../utils.js";
 import * as ServiceSelector from "../services/selector/index.js";
 import * as CertificateServices from "./services.js";
+//import { initCertificateTemplates } from "./cert_templates/ct_init.js";
 
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     const createForm = document.querySelector("#createCertModal form");
     const editForm = document.querySelector( "#editCertModal form");
 
+    // подключаем модуль работы с макетами
+    //const createTemplateComponent = initCertificateTemplates(createForm);
+    //const editTemplateComponent = initCertificateTemplates( editForm);
+    // ----
+    // модуль работы с услугами сертификата
     ServiceSelector.init();
     CertificateServices.init(createForm);
     CertificateServices.init(editForm);
+    //
 
-    //----
-    // тестовый ввод. В консоли ввести testSelector(). Откроется модалка
-    // window.testSelector = (options = {}) => {
-    //     ServiceSelector.open(options);
-    // };
-    //------
     if (createForm) {
         const updateExpiration = initExpirationType(createForm);
         const updateSpending = initSpendingType(createForm);

@@ -363,3 +363,92 @@ body {
     gap: 5px;
     width: 90px
 }
+
+/* 1. Карточка макета: делаем её компактной и аккуратной */
+.certificate-template-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background-color: #ffffff;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease;
+}
+
+.certificate-template-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 2. Контейнер превью: жестко ограничиваем размер "окошка" */
+.certificate-template-preview {
+    flex-shrink: 0; /* Запрещаем сжимать блок превью */
+    width: 120px;   /* Фиксированная ширина миниатюры */
+    height: 120px;  /* Фиксированная высота миниатюры */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    overflow: hidden; /* Обрезает всё, что теоретически может вылезти */
+    border: 1px solid #e9ecef;
+}
+
+/* 3. САМОЕ ГЛАВНОЕ: Ограничиваем размер самой картинки */
+.certificate-template-image {
+    max-width: 100%;       /* Не шире контейнера */
+    max-height: 100%;      /* Не выше контейнера */
+    width: auto;           /* Сохраняем пропорции по ширине */
+    height: auto;          /* Сохраняем пропорции по высоте */
+    object-fit: contain;   /* Картинка вписывается полностью, не обрезаясь */
+    cursor: pointer;       /* Показываем, что на картинку можно нажать */
+    transition: transform 0.2s ease;
+}
+
+/* Легкий эффект увеличения при наведении на картинку */
+.certificate-template-image:hover {
+    transform: scale(1.05);
+}
+
+/* 4. Информационный блок: занимаем оставшееся пространство */
+.certificate-template-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0; /* Критически важно для работы text-overflow внутри flex */
+}
+
+.certificate-template-name {
+    font-weight: 600;
+    margin-bottom: 4px;
+    /* Обрезаем длинное имя троеточием */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 5. Кнопка удаления: прижимаем к верхнему правому углу */
+.certificate-template-card .btn-outline-danger {
+    align-self: flex-start;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Стили для состояния "пусто" и placeholder */
+.certificate-templates-empty {
+    padding: 20px;
+    text-align: center;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.certificate-template-preview-placeholder {
+    text-align: center;
+    padding: 10px;
+    font-size: 0.85rem;
+    color: #6c757d;
+}

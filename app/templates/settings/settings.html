@@ -45,6 +45,14 @@
             </a>
         </div>
         {% endif %} 
+        <!-- Кнопка для макетов сертификатов -->
+
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('templates.list_templates') }}" class="btn btn-info d-block h-100">
+                Макеты сертификатов
+            </a>
+        </div>
+
         <a href="{{ url_for('auth.index') }}" class="btn btn-secondary mt-3">Назад</a>
 </div>
 

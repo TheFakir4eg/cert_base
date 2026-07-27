@@ -17,7 +17,7 @@ class Config:
     
     MAX_BULK = 500
     
-    CERTIFICATE_TEMPLATES_PATH = r"C:\Pankov\Templates"
+    CERTIFICATE_TEMPLATES_PATH = "C:\\Pankov\\Templates"
     
     ALLOWED_TEMPLATE_EXTENSIONS = {
         ".jpg",

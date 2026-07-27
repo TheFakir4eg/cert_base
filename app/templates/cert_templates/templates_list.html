@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex flex-column align-items-start mb-3">
+        <h1 class="mb-2">Макеты сертификатов</h1>
+        
+        <div class="d-flex gap-2">
+            <button
+                type="button"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#createTemplateModal">
+                Создать макет
+            </button>
+            <a href="{{ url_for('settings.settings') }}" class="btn btn-secondary">Назад</a>
+        </div>
+    </div>
+    {% if templates %}
+        <div class="row g-3">
+            {% for template in templates %}
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {{ template.name }}
+                            </h5>
+                            <div class="text-muted mb-2">
+                                {{ template.code }}
+                            </div>
+                            {% if template.description %}
+                                <p class="card-text">
+                                    {{ template.description }}
+                                </p>
+                            {% endif %}
+                            <div class="text-muted">
+                                Версий: {{ template.versions|length }}
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{{ url_for(
+                                    'templates.template_detail',
+                                    template_id=template.id
+                                ) }}"
+                               class="btn btn-outline-primary">
+                                Открыть
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Макеты сертификатов ещё не созданы.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Модальное окно создания карточки макета -->
+<div
+    class="modal fade"
+    id="createTemplateModal"
+    tabindex="-1"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    Создание макета
+                </h5>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
+            </div>
+            <form
+                method="POST"
+                action="{{ url_for('templates.create_template') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label
+                            for="template-name"
+                            class="form-label">
+                            Название
+                        </label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="template-name"
+                            name="name"
+                            required
+                            maxlength="150">
+                    </div>
+                    <div class="mb-3">
+                        <label
+                            for="template-code"
+                            class="form-label">
+                            Код
+                        </label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="template-code"
+                            name="code"
+                            required
+                            maxlength="100">
+                        <div class="form-text">
+                            Уникальный технический идентификатор макета.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label
+                            for="template-description"
+                            class="form-label">
+                            Описание
+                        </label>
+                        <textarea
+                            class="form-control"
+                            id="template-description"
+                            name="description"
+                            rows="3"
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                        Отмена
+                    </button>
+                    <button
+                        type="submit"
+                        class="btn btn-primary">
+                        Создать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

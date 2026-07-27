@@ -37,6 +37,9 @@ function selectRow(row) {
     if (dom.spendBtn) {
         dom.spendBtn.disabled = !hasClient || !active || balance <= 0;
     }
+    if (dom.transactionBtn) {
+        dom.transactionBtn.disabled = !hasClient || !active || balance <= 0;
+    }
 
     if (dom.closingBtn) {
         //dom.closingBtn.disabled = !active || balance > 0;

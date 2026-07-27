@@ -114,7 +114,7 @@ def get_certificate_transactions(
             CertificateTransaction.certificate_id == certificate_id
         )
         .order_by(
-            CertificateTransaction.created_at.desc()
+            CertificateTransaction.create_date.desc()
         )
         .all()
     )

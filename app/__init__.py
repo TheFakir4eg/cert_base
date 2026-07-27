@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from app.services.filters import money
 from .config import Config
 import os
+from app.utils.audit import register_audit_listeners; 
 
 load_dotenv() # Загружаем переменные из .env
 
@@ -53,6 +54,7 @@ def create_app():
     # подключаем файл models.py со структурой базы
     with app.app_context():
         from app import models
+        #register_audit_listeners()
         
     # Регистрируем blueprints 
     from .routes.auth_routes import auth_bp
@@ -64,6 +66,8 @@ def create_app():
     from .routes.new_group_routes import bp as new_group_bp
     from .routes.clients_routes import clients_bp 
     from .routes.services_routes import services_bp
+    from .routes.templates_routes import templates_bp
+    from .routes.reports_routes import reports_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(places_bp)
@@ -74,5 +78,7 @@ def create_app():
     app.register_blueprint(new_group_bp)
     app.register_blueprint(group_bp)
     app.register_blueprint(services_bp)
+    app.register_blueprint(templates_bp)
+    app.register_blueprint(reports_bp)
     
     return app
