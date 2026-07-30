@@ -1,7 +1,7 @@
 {% extends "reports/base.html" %}
 
 {% block header %}
-    {{ report.title if report else "Использование" }}
+    {{ report.title if report else "Реестр" }}
 {% endblock %}
 
 {% block filters %}
@@ -86,6 +86,7 @@
 
                     {% endfor %}
                 </select>
+
             </div>
             <!-- Клиент -->
             <div class="col-md-2">
@@ -110,48 +111,29 @@
                     {% endfor %}
                 </select>
             </div>
-            <!-- Услуга -->
+            <!-- Статус -->
             <div class="col-md-2">
                 <label class="form-label">
-                    Услуга
+                    Статус
                 </label>
-                <select
-                    class="form-select"
-                    name="service_id">
+                <select class="form-select" name="status">
                     <option value="">
                         Все
                     </option>
-                    {% for service in services %}
-                        <option
-                            value="{{ service.id }}"
-                            {% if request.args.get('service_id') == service.id|string %}
-                                selected
-                            {% endif %}>
-                            {{ service.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <!-- Группа услуг -->
-            <div class="col-md-2">
-                <label class="form-label">
-                    Группа услуг
-                </label>
-                <select
-                    class="form-select"
-                    name="servicegroup_id">
-                    <option value="">
-                        Все
+                    <option
+                        value="true"
+                        {% if request.args.get('status') == 'true' %}
+                            selected
+                        {% endif %}>
+                        Активные
                     </option>
-                    {% for servicegroup in servicegroups %}
-                        <option
-                            value="{{ service.id }}"
-                            {% if request.args.get('servicegroup_id') == servicegroup.id|string %}
-                                selected
-                            {% endif %}>
-                            {{ servicegroup.name }}
-                        </option>
-                    {% endfor %}
+                    <option
+                        value="false"
+                        {% if request.args.get('status') == 'false' %}
+                            selected
+                        {% endif %}>
+                        Неактивные
+                    </option>
                 </select>
             </div>
             <!-- Кнопка -->
@@ -159,7 +141,7 @@
                 <button  class="btn btn-primary"  type="submit"  >
                     Сформировать
                 </button>
-                <a  href="{{ url_for('reports.usage_report') }}" class="btn btn-secondary">
+                <a  href="{{ url_for('reports.registry_report') }}" class="btn btn-secondary">
                     Сбросить
                 </a>
             </div>
@@ -174,7 +156,7 @@
     {% if report %}
         <a
             href="{{ url_for(
-                'reports.usage_export',
+                'reports.registry_export',
                 **request.args
             ) }}"
             class="btn btn-success">

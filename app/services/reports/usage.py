@@ -144,4 +144,38 @@ class UsageReport(BaseReport):
         ]
 
     def _build_rows(self, context):
-        pass    
+        rows = []
+
+        for item in context.items:
+
+            transaction = item.transaction
+            certificate = transaction.certificate
+
+            row = ReportRow(
+                values={
+                    "operation_date": transaction.create_date,
+
+                    "certificate": (
+                        f"{certificate.series} "
+                        f"{certificate.display_number}"
+                    ),
+
+                    "client": (
+                        transaction.client.name
+                        if transaction.client
+                        else ""
+                    ),
+
+                    "service": item.service_name,
+
+                    "quantity": item.quantity,
+
+                    "price": item.price,
+
+                    "amount": item.amount,
+                }
+            )
+
+            rows.append(row)
+
+        return rows

@@ -106,3 +106,13 @@ class UsageReportFilter(BaseReportFilter):
     client_id: int | None = None
     service_id: int | None = None
     servicegroup_id: int | None = None
+    
+@dataclass(slots=True)
+class RegistryReportFilter(BaseReportFilter):
+
+    place_id: int | None = None
+    mol_id: int | None = None
+    series: str | None = None
+    status: str | None = None
+    client_id: int | None = None
+    #balance_type: str | None = None

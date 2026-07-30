@@ -4,10 +4,12 @@ from sqlalchemy import desc
 from sqlalchemy.exc import IntegrityError
 
 from app import db
-from app.models import AuditLog, Place, User
+from app.models import AuditLog, Client, Place, ServiceGroup, Services, User
 from app.services.reports.balances import BalancesReport
-from app.services.reports.filters import ( BalancesReportFilter, MovementReportFilter)
-from app.services.reports.movement import ( MovementReport)
+from app.services.reports.filters import ( BalancesReportFilter, MovementReportFilter, RegistryReportFilter, UsageReportFilter)
+from app.services.reports.movement import  MovementReport
+from app.services.reports.registry import RegistryReport
+from app.services.reports.usage import  UsageReport
 from app.services.reports.excel_export import (
     ExcelReportExporter
 )
@@ -164,6 +166,88 @@ def balance_export():
         excel,
         as_attachment=True,
         download_name="balance_report.xlsx",
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        )
+    )
+    
+@reports_bp.route("/usage", methods=["GET"])
+def usage_report():
+    report = None
+    filters = UsageReportFilter.from_request( request.args)
+    if request.args.get("build") == "1":
+        report = UsageReport().build(filters)
+        
+    places=Place.query.order_by( Place.name).all()
+    users=User.query.order_by( User.name).all()
+    servicegroup = ServiceGroup.query.order_by( ServiceGroup.name).all()
+    services = Services.query.order_by( Services.name).all()
+    clients = Client.query.order_by( Client.name).all()
+    
+    print(filters)
+    
+    return render_template(
+        "reports/usage.html",
+        report=report,
+        places=places,
+        users=users,
+        servicegroup=servicegroup,
+        services=services,
+        clients = clients
+    )
+    
+@reports_bp.route( "/usage/export", methods=["GET"])
+def usage_export():
+    filters = UsageReportFilter.from_request( request.args)
+    report = UsageReport().build( filters)
+    excel = ExcelReportExporter().export( report)
+
+    return send_file(
+        excel,
+        as_attachment=True,
+        download_name="usage_report.xlsx",
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        )
+    )
+    
+@reports_bp.route("/registry")
+def registry_report():
+    report = None
+    filters = RegistryReportFilter.from_request( request.args)
+    if request.args.get("build") == "1":
+        report = RegistryReport().build(filters)
+    
+    places=Place.query.order_by( Place.name).all()
+    users=User.query.order_by( User.name).all()
+    servicegroup = ServiceGroup.query.order_by( ServiceGroup.name).all()
+    services = Services.query.order_by( Services.name).all()
+    clients = Client.query.order_by( Client.name).all()
+    
+    print(filters)
+    
+    return render_template(
+        "reports/registry.html",
+        report=report,
+        places=places,
+        users=users,
+        servicegroup=servicegroup,
+        services=services,
+        clients = clients
+    )
+    
+@reports_bp.route("/registry/export")
+def registry_export():
+    filters = RegistryReportFilter.from_request( request.args)
+    report = RegistryReport().build( filters)
+    excel = ExcelReportExporter().export( report)
+
+    return send_file(
+        excel,
+        as_attachment=True,
+        download_name="registry_report.xlsx",
         mimetype=(
             "application/vnd.openxmlformats-officedocument."
             "spreadsheetml.sheet"
