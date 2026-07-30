@@ -1,12 +1,16 @@
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for, send_file
 from flask_login import login_required
 from sqlalchemy import desc
 from sqlalchemy.exc import IntegrityError
 
 from app import db
-from app.models import AuditLog, User
-
-
+from app.models import AuditLog, Place, User
+from app.services.reports.balances import BalancesReport
+from app.services.reports.filters import ( BalancesReportFilter, MovementReportFilter)
+from app.services.reports.movement import ( MovementReport)
+from app.services.reports.excel_export import (
+    ExcelReportExporter
+)
 
 reports_bp = Blueprint( "reports",
     __name__,
@@ -93,3 +97,75 @@ def get_audit_log(log_id):
         'comment': log.comment,
         'ip_address': log.ip_address
     })
+    
+@reports_bp.route("/movement", methods=["GET"])
+def movement_report():
+    report = None
+    filters = MovementReportFilter.from_request( request.args)
+    if request.args.get("build") == "1":
+
+        report = MovementReport().build(filters)
+        
+    places=Place.query.order_by( Place.name).all()
+    users=User.query.order_by( User.name).all()
+    
+    print(filters)
+    
+    return render_template(
+        "reports/movement.html",
+        report=report,
+        places=places,
+        users=users
+    )
+    
+@reports_bp.route( "/movement/export", methods=["GET"])
+def movement_export():
+    filters = MovementReportFilter.from_request( request.args)
+    report = MovementReport().build( filters)
+    excel = ExcelReportExporter().export( report)
+
+    return send_file(
+        excel,
+        as_attachment=True,
+        download_name="movement_report.xlsx",
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        )
+    )
+    
+@reports_bp.route("/balance", methods=["GET"])
+def balance_report():
+    report = None
+    filters = BalancesReportFilter.from_request( request.args)
+    if request.args.get("build") == "1":
+
+        report = BalancesReport().build(filters)
+        
+    places=Place.query.order_by( Place.name).all()
+    users=User.query.order_by( User.name).all()
+    
+    print(filters)
+    
+    return render_template(
+        "reports/balance.html",
+        report=report,
+        places=places,
+        users=users
+    )
+    
+@reports_bp.route( "/balance/export", methods=["GET"])
+def balance_export():
+    filters = BalancesReportFilter.from_request( request.args)
+    report = BalancesReport().build( filters)
+    excel = ExcelReportExporter().export( report)
+
+    return send_file(
+        excel,
+        as_attachment=True,
+        download_name="balance_report.xlsx",
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        )
+    )

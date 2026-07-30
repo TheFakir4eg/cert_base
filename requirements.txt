@@ -8,3 +8,4 @@ flask-login
 cryptography
 gunicorn
 python-dateutil
+openpyxl

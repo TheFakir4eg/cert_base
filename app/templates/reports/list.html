@@ -2,16 +2,35 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2>Список отчетов</h2>
+    <div class="container mt-5">
+        <h2>Список отчетов</h2>
 
-    <a href="{{ url_for('auth.index') }}" class="btn btn-secondary">Назад</a>
-</div>
-<div class="container mt-5">
-    <a href="{{ url_for('reports.audit_log') }}" 
-            class="btn btn-success d-block h-100">
-            Логи 
-    </a>
-</div>
+        <a href="{{ url_for('auth.index') }}" class="btn btn-secondary">Назад</a>
+    </div>
+    <div class="container mt-2">
+        <a href="{{ url_for('reports.audit_log') }}" 
+                class="btn btn-success ">
+                Логи 
+        </a>
+    </div>
+    <div class="container mt-2">
+        <a href="{{ url_for('reports.movement_report') }}" 
+                class="btn btn-success ">
+                Движение 
+        </a>
+    </div>
+    <div class="container mt-2">
+        <a href="{{ url_for('reports.balance_report') }}" 
+                class="btn btn-success ">
+                Баланс 
+        </a>
+    </div>
+
+    <div class="container mt-2">
+        <a href="{{ url_for('reports.usage_report') }}" 
+                class="btn btn-success ">
+                Использование
+        </a>
+    </div>
 
 {% endblock %}

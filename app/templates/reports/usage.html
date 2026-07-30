@@ -1,0 +1,198 @@
+{% extends "reports/base.html" %}
+
+{% block header %}
+    {{ report.title if report else "Мспользование" }}
+{% endblock %}
+
+{% block filters %}
+    <form method="get">
+        <input type="hidden" name="build" value="1">
+        <div class="row g-3">
+
+            <!-- Дата от -->
+            <div class="col-md-2">
+                <label class="form-label">
+                    Дата от
+                </label>
+                <input
+                    type="date"
+                    class="form-control"
+                    name="date_from"
+                    value="{{ request.args.get('date_from','') }}">
+            </div>
+
+            <!-- Дата до -->
+            <div class="col-md-2">
+                <label class="form-label">
+                    Дата до
+                </label>
+                <input
+                    type="date"
+                    class="form-control"
+                    name="date_to"
+                    value="{{ request.args.get('date_to','') }}">
+            </div>
+
+            <!-- Серия -->
+            <div class="col-md-2">
+                <label class="form-label">
+                    Серия
+                </label>
+                <input
+                    type="text"
+                    class="form-control"
+                    name="series"
+                    value="{{ request.args.get('series','') }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">
+                    Место
+                </label>
+                <select
+                    class="form-select"
+                    name="place_id">
+                    <option value="">
+                        Все
+                    </option>
+                    {% for place in places %}
+                    <option
+                        value="{{ place.id }}"
+                        {% if request.args.get('place_id') == place.id|string %}
+                            selected
+                        {% endif %}>
+                        {{ place.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">
+                    МОЛ
+                </label>
+                <select
+                    class="form-select"
+                    name="mol_id">
+                    <option value="">
+                        Все
+                    </option>
+                    {% for user in users %}
+                    <option
+                        value="{{ user.id }}"
+                        {% if request.args.get('mol_id') == user.id|string %}
+                            selected
+                        {% endif %}>
+                        {{ user.name }}
+                    </option>
+
+                    {% endfor %}
+                </select>
+
+            </div>
+            <!-- Статус -->
+            <div class="col-md-2">
+                <label class="form-label">
+                    Статус
+                </label>
+                <select class="form-select" name="status">
+                    <option value="">
+                        Все
+                    </option>
+                    <option
+                        value="true"
+                        {% if request.args.get('status') == 'true' %}
+                            selected
+                        {% endif %}>
+                        Активные
+                    </option>
+                    <option
+                        value="false"
+                        {% if request.args.get('status') == 'false' %}
+                            selected
+                        {% endif %}>
+                        Неактивные
+                    </option>
+                </select>
+            </div>
+            <!-- Кнопка -->
+            <div class="col-md-2 d-flex align-items-end gap-2 flex-nowrap">
+                <button  class="btn btn-primary"  type="submit"  >
+                    Сформировать
+                </button>
+                <a  href="{{ url_for('reports.movement_report') }}" class="btn btn-secondary">
+                    Сбросить
+                </a>
+            </div>
+            
+        </div>
+    </form>
+{% endblock %}
+
+{% block actions %}
+<div class="col-md-2 d-flex align-items-center gap-2 flex-nowrap">
+    <a href="{{ url_for('reports.list_reports') }}" class="btn btn-secondary">Назад</a>
+    {% if report %}
+        <a
+            href="{{ url_for(
+                'reports.balance_export',
+                **request.args
+            ) }}"
+            class="btn btn-success">
+            Excel
+        </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+{% if report %}
+    <div class="mt-3">
+        {% if report.filters %}
+            <small class="text-muted">
+                Параметры:
+                {{ report.filters }}
+            </small>
+        {% endif %}
+    </div>
+    <!-- Сводка -->
+
+    <div class="report-summary">
+        {% for item in report.summary %}
+            <div class="summary-item">
+                <strong>
+                    {{ item.label }}
+                </strong>
+                <span>
+                    {{ item.value }}
+                </span>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Таблица -->
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                {% for column in report.columns %}
+                    <th>
+                        {{ column.title }}
+                    </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in report.rows %}
+            <tr>
+                {% for column in report.columns %}
+                    <td>
+                        {{ row.values.get(column.key, "") | report_value(column.data_type) }}
+                    </td>
+                {% endfor %}
+            </tr>
+
+        {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+{% endblock %}

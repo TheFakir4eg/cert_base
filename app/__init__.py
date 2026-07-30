@@ -31,8 +31,35 @@ def load_user(user_id):
         current_app.logger.warning(f"User with ID {user_id} not found in database.")
     return user
 
+def register_report_filters(app):
+
+    @app.template_filter("report_value")
+    def report_value(value, data_type="text"):
+
+        if value is None:
+            return ""
+
+        if data_type == "money":
+            return f"{value:,.2f}".replace(",", " ")
+
+        if data_type == "number":
+            return f"{value:,.0f}".replace(",", " ")
+
+        if data_type == "date":
+
+            return value.strftime("%d-%m-%Y")
+
+
+        if data_type == "bool":
+
+            return "Да" if value else "Нет"
+
+
+        return value
+    
 def create_app():
     app = Flask(__name__)
+    register_report_filters(app)
     # app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Рекомендуется отключить
     # app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here') # Установите SECRET_KEY
