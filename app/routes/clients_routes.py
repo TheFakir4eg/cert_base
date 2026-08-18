@@ -20,6 +20,9 @@ def list_clients():
             #name = request.form.get('name')
             #full_name = request.form.get('fullName')
             full_name = (request.form.get('fullName') or '').strip()
+            last_name = (request.form.get('lastName') or '').strip()
+            first_name = (request.form.get('firstName') or '').strip()
+            second_name = (request.form.get('secondName') or '').strip()
             phone = request.form.get('phone')
             note = request.form.get('note')
 
@@ -31,15 +34,18 @@ def list_clients():
             parts = full_name.split()
             
             # Валидация (минимальная)
-            if full_name:
+            if full_name or (last_name and first_name ):
                 try:
                     val_phone = phone if phone else None
                     val_note = note if note else None
                     new_client = Client(
                         name=full_name,  # пока оставляем старое поле
-                        lastName=parts[0] if len(parts) > 0 else None,
-                        firstName=parts[1] if len(parts) > 1 else None,
-                        secondName=parts[2] if len(parts) > 2 else None,
+                        #lastName=parts[0] if len(parts) > 0 else None,
+                        lastName = last_name,
+                        firstName = first_name,
+                        #firstName=parts[1] if len(parts) > 1 else None,
+                        #secondName=parts[2] if len(parts) > 2 else None,
+                        secondName=second_name,
                         phone=val_phone,
                         note=val_note
                     )

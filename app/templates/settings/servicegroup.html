@@ -1,67 +1,58 @@
-<!-- app/templates/settings/servicegroup.html -->
 {% extends "base.html" %}
 
 {% block content %}
 <div class="container mt-5">
     <h2>Список групп услуг</h2>
 
-    <!-- Кнопка для открытия модального окна -->
-    <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createSGModal">
+    <button type="button" class="btn btn-primary mb-3" id="btn-create-group">
         Создать группу
     </button>
     <a class="btn btn-primary mb-3" href="{{ url_for('services.service_list') }}">
         Список услуг
     </a>
+    
     <ul class="list-group">
         {% for servicegroup in servicegroups %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ servicegroup.name }} - {{ servicegroup.note }}
+                {{ servicegroup.name }} - {{ servicegroup.note or 'Без комментария' }}
                 <div>    
                     <button type="button"
                             class="btn btn-info btn-sm me-1 edit-group-btn"
-                            title="Добавить услугу"
-                            id="create_service"
-                            data-servicegroup-id="{{ servicegroup.id }}"
-                            data-servicegroup-name="{{ servicegroup.name }}">
-                        ➕
-                    </button>
-                    <button type="button"
-                            class="btn btn-info btn-sm me-1 edit-group-btn"
                             title="Редактировать"
-                            id="servicegroup_edit"
                             data-servicegroup-id="{{ servicegroup.id }}"
-                            data-servicegroup-name="{{ servicegroup.name }}">
+                            data-servicegroup-name="{{ servicegroup.name }}"
+                            data-servicegroup-note="{{ servicegroup.note or '' }}">
                         ✏️
                     </button>
                     <button type="button"
                             class="btn btn-info btn-sm delete-group-btn"
                             title="Удалить"
-                            id="servicegroup_delete"
                             data-servicegroup-id="{{ servicegroup.id }}"
-                            data-servicegroup-name="{{ servicegroup.name}}">
+                            data-servicegroup-name="{{ servicegroup.name }}">
                         ❌
                     </button>
                 </div>
             </li>
         {% else %}
-            <!-- Этот блок отображается, если список servicegroup пуст -->
             <li class="list-group-item text-center text-muted">Список групп пуст.</li>
         {% endfor %}
     </ul>
     <a href="{{ url_for('settings.settings') }}" class="btn btn-secondary mt-3">Назад</a>
 </div>
 
-<!-- Модальное окно для создания группы услуг -->
-<div class="modal fade" id="createSGModal" tabindex="-1" aria-labelledby="createSGModalLabel" aria-hidden="true">
+<!-- Универсальное модальное окно (Создание / Редактирование) -->
+<div class="modal fade" id="serviceGroupModal" tabindex="-1" aria-labelledby="serviceGroupModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="createSGModalLabel">Создать новую группу</h5>
+        <h5 class="modal-title" id="serviceGroupModalLabel">Группа услуг</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form method="POST">
+      <form method="POST" id="sg-form">
           <div class="modal-body">
-              <input type="hidden" name="action" value="create"> <!-- Скрытое поле действия -->
+              <input type="hidden" name="action" id="form_action" value="">
+              <input type="hidden" name="servicegroup_id" id="form_sg_id" value="">
+              
               <div class="mb-3">
                   <label for="name" class="form-label">Наименование *</label>
                   <input type="text" class="form-control" id="name" name="name" required>
@@ -73,10 +64,12 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-            <button type="submit" class="btn btn-primary">Создать</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit">Сохранить</button>
           </div>
       </form>
     </div>
   </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/servicegroup/interaction.js') }}"></script>
 {% endblock %}

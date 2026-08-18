@@ -279,10 +279,16 @@ class Group(db.Model, TimestampMixin):
     users = db.relationship('User', back_populates='user_group', lazy=True) # Список пользователей в этой группе
     # В модели Users обратная ссылка: user_group = db.relationship('Groups', back_populates='users')
 
+    # permissions = db.relationship(
+    #     "GroupPermission",
+    #     backref="group",
+    #     lazy=True
+    # )
     permissions = db.relationship(
-        "GroupPermission",
+        "GroupPermission", 
         backref="group",
-        lazy=True
+        cascade="all, delete-orphan",
+        passive_deletes=True
     )
     
     def __repr__(self):
@@ -374,7 +380,7 @@ class ServiceGroup(db.Model, TimestampMixin):
     services = db.relationship(
         "Services",
         back_populates="servicegroup",
-        cascade="all, delete-orphan",
+        cascade="save-update, merge", # Убрали delete-orphan
         passive_deletes=True
     )
     

@@ -13,7 +13,7 @@
     <ul class="list-group" id="servicesList">
         {% for service in services %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ service.name }} (Группа: {{ service.servicegroup.name }})
+                {{ service.name }} (Группа: {{ service.servicegroup.name }}) - Активность: {{'Да' if service.is_active else 'Нет'}}
                 <div>
                     <!-- Кнопка редактирования -->
                     <button type="button"

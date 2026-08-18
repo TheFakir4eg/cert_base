@@ -180,3 +180,61 @@ def edit_place():
             "success": False,
             "error": str(e)
         }), 500
+        
+# маршрут для удаления мест через ajax
+@places_bp.post("/places/delete")
+@login_required
+def delete_place():
+    data = request.get_json()
+    place_id = data.get("place_id")
+
+    if not place_id:
+        return jsonify({
+            "success": False,
+            "error": "Не указан ID места для удаления"
+        }), 400
+
+    try:
+        place_id = int(place_id)
+        place = db.session.get(Place, place_id)
+
+        if not place:
+            return jsonify({
+                "success": False,
+                "error": "Место не найдено"
+            }), 400
+
+        # Проверим, есть ли сертификаты, связанные с этим местом
+        associated_certificates = db.session.execute(
+            db.select(Certificate).filter_by(place_id=place_id)
+        ).scalars().all()
+
+        if associated_certificates:
+            return jsonify({
+                "success": False,
+                "error": f'Невозможно удалить место "{place.name}", так как с ним связаны сертификаты.'
+            }), 400
+
+        db.session.delete(place)
+        db.session.commit()
+        current_app.logger.info(f"Удалено место: {place.name}")
+
+        return jsonify({
+            "success": True,
+            "message": f'Место "{place.name}" успешно удалено!',
+            "place_id": place_id
+        })
+
+    except ValueError:
+        current_app.logger.error(f"Неверный формат ID места: '{place_id}'")
+        return jsonify({
+            "success": False,
+            "error": "Неверный формат ID места"
+        }), 400
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Ошибка при удалении места: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Внутренняя ошибка сервера"
+        }), 500

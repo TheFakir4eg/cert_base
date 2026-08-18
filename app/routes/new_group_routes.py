@@ -140,17 +140,37 @@ def create_group():
 
     return {"status": "ok", "group_id": group.id}
 
+# @bp.delete("/<int:group_id>")
+# def delete_group(group_id):
+#     group = db.get_or_404(Group, group_id)
+
+#     users_count = db.session.execute(
+#         db.select(User).filter_by(group_id=group_id, active=True)
+#     ).scalars().all()
+
+#     if users_count:
+#         abort(400, "Cannot delete group with users. Remove users first.")
+
+#     db.session.delete(group)
+#     db.session.commit()
+
+#     return {"status": "deleted"}
+
 @bp.delete("/<int:group_id>")
 def delete_group(group_id):
     group = db.get_or_404(Group, group_id)
 
-    users_count = db.session.execute(
-        db.select(User).filter_by(group_id=group_id, active=True)
-    ).scalars().all()
+    # 1. Отвязываем всех пользователей от удаляемой группы (делаем их "сиротами")
+    # Это соответствует тому предупреждению, которое видит пользователь во фронтенде
+    db.session.execute(
+        db.update(User)
+        .where(User.group_id == group_id)
+        .values(group_id=None)
+    )
 
-    if users_count:
-        abort(400, "Cannot delete group with users. Remove users first.")
-
+    # 2. Удаляем саму группу.
+    # Благодаря настройке cascade="all, delete-orphan" в models.py, 
+    # связанные записи GroupPermission удалятся автоматически.
     db.session.delete(group)
     db.session.commit()
 
@@ -214,7 +234,9 @@ def get_all_users():
 from flask import current_app
 import sys
 
-@bp.get("/api/groups/<int:group_id>/users")
+# @bp.get("/api/groups/<int:group_id>/users")
+# def get_group_users(group_id):
+@bp.get("/<int:group_id>/users")
 def get_group_users(group_id):
     print('/api/groups/<int:group_id>/users')
     group = Group.query.get_or_404(group_id)

@@ -50,21 +50,44 @@ document.addEventListener("DOMContentLoaded", function () {
         renderUsers([]);
     }
 
+    // async function openEditModal(groupId, groupName) {
+    //     currentGroupId = groupId;
+    //     modalTitle.textContent = "Группа: " + groupName;
+    //     //console.log(modalTitle.textContent);
+    //     showSpinner();
+    //     modal.show();
+
+    //     await loadPermissionsRegistry();
+    //     await loadAllUsers();
+    //     await loadGroupData(groupId);
+    //     const groupUserIds = await loadGroupUsers(groupId)
+
+    //     renderModalContent();
+    //     renderUsers(groupUserIds);
+    //     console.log (groupUserIds);
+    //     // заполняем поля
+    //     document.getElementById("groupNameInput").value = groupData?.text ?? "";
+    //     document.getElementById("groupNoteInput").value = groupData?.note ?? "";
+    // }
     async function openEditModal(groupId, groupName) {
-        currentGroupId = groupId;
+        currentGroupId = parseInt(groupId, 10); // ⭐ Преобразуем в число
         modalTitle.textContent = "Группа: " + groupName;
-        //console.log(modalTitle.textContent);
         showSpinner();
         modal.show();
 
         await loadPermissionsRegistry();
         await loadAllUsers();
         await loadGroupData(groupId);
-        const groupUserIds = await loadGroupUsers(groupId)
+        const groupUserIds = await loadGroupUsers(groupId);
 
         renderModalContent();
         renderUsers(groupUserIds);
-        console.log (groupUserIds);
+        
+        // ⭐ Отладочный вывод - проверьте консоль браузера
+        console.log("currentGroupId:", currentGroupId, typeof currentGroupId);
+        console.log("allUsers:", allUsers);
+        console.log("groupUserIds:", groupUserIds);
+        
         // заполняем поля
         document.getElementById("groupNameInput").value = groupData?.text ?? "";
         document.getElementById("groupNoteInput").value = groupData?.note ?? "";
@@ -96,37 +119,72 @@ document.addEventListener("DOMContentLoaded", function () {
         allUsers = data.users
     }
 
+    // function renderUsers(groupUserIds = []) {
+
+    //     const availableList = document.getElementById("availableUsers")
+    //     const groupList = document.getElementById("groupUsers")
+
+    //     availableList.innerHTML = ""
+    //     groupList.innerHTML = ""
+
+    //     allUsers.forEach(user => {
+
+    //         const li = document.createElement("li")
+    //         li.textContent = `${user.name} (${user.login})`
+    //         li.dataset.id = user.id
+
+    //         // пользователь уже состоит в ЭТОЙ группе
+    //         if (groupUserIds.includes(user.id)) {
+    //             groupList.appendChild(li)
+    //             return
+    //         }
+
+    //         // пользователь состоит в ДРУГОЙ группе
+    //         if (user.group_id && user.group_id !== currentGroupId) {
+    //             li.classList.add("text-muted")
+    //             li.style.pointerEvents = "none"
+    //             availableList.appendChild(li)
+    //             return
+    //         }
+
+    //         // свободный пользователь
+    //         availableList.appendChild(li)
+    //     })
+    // }
+
     function renderUsers(groupUserIds = []) {
+        const availableList = document.getElementById("availableUsers");
+        const groupList = document.getElementById("groupUsers");
 
-        const availableList = document.getElementById("availableUsers")
-        const groupList = document.getElementById("groupUsers")
+        availableList.innerHTML = "";
+        groupList.innerHTML = "";
 
-        availableList.innerHTML = ""
-        groupList.innerHTML = ""
+        // Приводим ID пользователей текущей группы к числам для надежного сравнения
+        const groupUserIdNumbers = groupUserIds.map(id => Number(id));
 
         allUsers.forEach(user => {
+            const li = document.createElement("li");
+            li.textContent = `${user.name} (${user.login})`;
+            li.dataset.id = user.id;
 
-            const li = document.createElement("li")
-            li.textContent = `${user.name} (${user.login})`
-            li.dataset.id = user.id
+            const userId = Number(user.id);
+            const userGroupId = user.group_id ? Number(user.group_id) : null;
 
-            // пользователь уже состоит в ЭТОЙ группе
-            if (groupUserIds.includes(user.id)) {
-                groupList.appendChild(li)
-                return
+            // 1. Пользователь уже состоит в ЭТОЙ группе — отправляем его в правый список
+            if (groupUserIdNumbers.includes(userId)) {
+                groupList.appendChild(li);
+                return;
             }
 
-            // пользователь состоит в ДРУГОЙ группе
-            if (user.group_id && user.group_id !== currentGroupId) {
-                li.classList.add("text-muted")
-                li.style.pointerEvents = "none"
-                availableList.appendChild(li)
-                return
+            // 2. Пользователь состоит в ДРУГОЙ группе — НЕ ОТОБРАЖАЕМ его вообще
+            if (userGroupId !== null && userGroupId !== currentGroupId) {
+                // Просто пропускаем этого пользователя (return без добавления в DOM)
+                return; 
             }
 
-            // свободный пользователь
-            availableList.appendChild(li)
-        })
+            // 3. Свободный пользователь (userGroupId === null) — добавляем в список доступных
+            availableList.appendChild(li);
+        });
     }
 
     async function loadGroupUsers(groupId) {
@@ -401,21 +459,37 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const confirmed = confirm(
                 `Удалить группу "${groupName}"?\n\n` +
-                "Пользователи останутся без группы."
+                "Пользователи, состоящие в ней, останутся без группы."
             );
 
             if (!confirmed) return;
 
-            const res = await fetch(`/api/groups/${groupId}`, {
-                method: "DELETE"
-            });
+            try {
+                const res = await fetch(`/api/groups/${groupId}`, {
+                    method: "DELETE"
+                });
 
-            if (!res.ok) {
-                alert("Ошибка удаления группы");
-                return;
+                if (!res.ok) {
+                    // Пытаемся прочитать текст ошибки от сервера
+                    let errorMsg = "Неизвестная ошибка при удалении";
+                    try {
+                        const errData = await res.json();
+                        errorMsg = errData.error || errData.message || errorMsg;
+                    } catch (e) {
+                        // Если сервер вернул не JSON, а просто текст
+                        errorMsg = await res.text();
+                    }
+                    alert(`Ошибка: ${errorMsg}`);
+                    return;
+                }
+
+                // Успех
+                location.reload();
+
+            } catch (err) {
+                console.error("Сетевая ошибка:", err);
+                alert("Не удалось связаться с сервером");
             }
-
-            location.reload();
         });
-    });    
+    });     
 });

@@ -23,6 +23,84 @@ def settings():
     current_app.logger.info("Доступ к странице Настройки")
     return render_template('settings/settings.html')
 
+# @settings_bp.route('/servicegroup', methods=['GET', 'POST'])
+# @login_required
+# def servicegroup():
+#     current_app.logger.info("Доступ к списку групп услуг")
+#     if request.method == 'POST':
+#         action = request.form.get('action') # Получаем действие из формы
+
+#         if action == 'create':
+#             # Обработка формы создания места
+#             name = request.form.get('name')
+#             note = request.form.get('note')
+
+#             # Валидация (минимальная)
+#             if name:
+#                 try:
+#                     val_note = note if note else None
+#                     new_servicegroup = ServiceGroup(name=name, note=val_note)
+
+#                     db.session.add(new_servicegroup)
+#                     db.session.commit()
+
+#                     current_app.logger.info(f"Создана группа: {new_servicegroup.name}")
+#                     flash(f'✅ Группа "{name}" успешно создана!', 'success')
+#                 except Exception as e:
+#                     db.session.rollback()
+#                     current_app.logger.error(f"Ошибка при создании группы: {e}")
+#                     flash(f'❌ Ошибка при создании группы: {str(e)}', 'danger')
+#             else:
+#                 flash('⚠️ Пожалуйста, заполните обязательные поля формы.', 'warning')
+
+#         elif action == 'delete':
+#             # Обработка формы удаления группы
+#             servicegroup_id = request.form.get('servicegroup_id') # Получаем ID места из формы
+
+#             if servicegroup_id:
+#                 try:
+#                     servicegroup_id = int(servicegroup_id)
+#                     servicegroup = db.session.get(ServiceGroup, servicegroup_id)
+
+#                     if servicegroup:
+#                         # Проверим, есть ли сертификаты, связанные с этой группой
+#                         associated_certificates = db.session.execute(
+#                             db.select(Certificate).filter_by(servicegroup_id=servicegroup_id)
+#                         ).scalars().all()
+
+#                         if associated_certificates:
+#                             flash(f'❌ Невозможно удалить группу "{servicegroup.name}", так как с ней связаны сертификаты.', 'warning')
+#                         else:
+#                             # Удаляем место
+#                             db.session.delete(servicegroup)
+#                             db.session.commit()
+#                             current_app.logger.info(f"Удалена группа: {servicegroup.name}")
+#                             flash(f'✅ Группа "{servicegroup.name}" успешно удалена!', 'success')
+#                     else:
+#                         flash('❌ Группа не найдена.', 'danger')
+
+#                 except ValueError:
+#                     current_app.logger.error(f"Неверный формат ID группы: '{servicegroup_id}'")
+#                     flash('❌ Неверный формат ID группы.', 'danger')
+#                 except Exception as e:
+#                     db.session.rollback()
+#                     current_app.logger.error(f"Ошибка при удалении группы: {e}")
+#                     flash(f'❌ Ошибка при удалении группы: {str(e)}', 'danger')
+#             else:
+#                 flash('⚠️ Не указан ID группы для удаления.', 'warning')
+
+#         else:
+#             # Если action не 'create' и не 'delete', или вообще отсутствует
+#             flash('⚠️ Неизвестное действие.', 'warning')
+
+#         # После обработки POST-запроса (любого действия) перенаправляем на GET /places
+#         return redirect(url_for('settings.servicegroup'))
+
+#     # GET-запрос: отображаем список
+#     # Получаем все места из базы данных
+#     servicegroups = db.session.execute(db.select(ServiceGroup)).scalars().all()
+#     return render_template('settings/servicegroup.html', servicegroups = servicegroups)
+
 @settings_bp.route('/servicegroup', methods=['GET', 'POST'])
 @login_required
 def servicegroup():
@@ -31,7 +109,7 @@ def servicegroup():
         action = request.form.get('action') # Получаем действие из формы
 
         if action == 'create':
-            # Обработка формы создания места
+            # Обработка формы создания группы
             name = request.form.get('name')
             note = request.form.get('note')
 
@@ -53,9 +131,37 @@ def servicegroup():
             else:
                 flash('⚠️ Пожалуйста, заполните обязательные поля формы.', 'warning')
 
+        elif action == 'edit':
+            # Обработка формы редактирования группы
+            servicegroup_id = request.form.get('servicegroup_id')
+            name = request.form.get('name')
+            note = request.form.get('note')
+
+            if servicegroup_id and name:
+                try:
+                    servicegroup = db.session.get(ServiceGroup, int(servicegroup_id))
+                    if servicegroup:
+                        servicegroup.name = name
+                        servicegroup.note = note if note else None
+                        db.session.commit()
+                        
+                        current_app.logger.info(f"Отредактирована группа: {servicegroup.name}")
+                        flash(f'✅ Группа "{name}" успешно обновлена!', 'success')
+                    else:
+                        flash('❌ Группа не найдена.', 'danger')
+                except ValueError:
+                    current_app.logger.error(f"Неверный формат ID группы: '{servicegroup_id}'")
+                    flash('❌ Неверный формат ID группы.', 'danger')
+                except Exception as e:
+                    db.session.rollback()
+                    current_app.logger.error(f"Ошибка при редактировании группы: {e}")
+                    flash(f'❌ Ошибка при редактировании группы: {str(e)}', 'danger')
+            else:
+                flash('⚠️ Пожалуйста, заполните обязательные поля формы.', 'warning')
+
         elif action == 'delete':
             # Обработка формы удаления группы
-            servicegroup_id = request.form.get('servicegroup_id') # Получаем ID места из формы
+            servicegroup_id = request.form.get('servicegroup_id')
 
             if servicegroup_id:
                 try:
@@ -63,17 +169,29 @@ def servicegroup():
                     servicegroup = db.session.get(ServiceGroup, servicegroup_id)
 
                     if servicegroup:
-                        # Проверим, есть ли сертификаты, связанные с этой группой
+                        # 1. Проверка на наличие связанных сертификатов
                         associated_certificates = db.session.execute(
                             db.select(Certificate).filter_by(servicegroup_id=servicegroup_id)
                         ).scalars().all()
 
-                        if associated_certificates:
-                            flash(f'❌ Невозможно удалить группу "{servicegroup.name}", так как с ней связаны сертификаты.', 'warning')
+                        # 2. Проверка на наличие связанных услуг
+                        associated_services = db.session.execute(
+                            db.select(Services).filter_by(servicegroup_id=servicegroup_id)
+                        ).scalars().all()
+
+                        # Блокируем удаление, если есть связанные объекты
+                        if associated_certificates or associated_services:
+                            if associated_certificates and associated_services:
+                                flash(f'❌ Невозможно удалить группу "{servicegroup.name}", так как с ней связаны услуги и сертификаты.', 'warning')
+                            elif associated_certificates:
+                                flash(f'❌ Невозможно удалить группу "{servicegroup.name}", так как с ней связаны сертификаты.', 'warning')
+                            else:
+                                flash(f'❌ Невозможно удалить группу "{servicegroup.name}", так как с ней связаны услуги.', 'warning')
                         else:
-                            # Удаляем место
+                            # Если связей нет — удаляем группу
                             db.session.delete(servicegroup)
                             db.session.commit()
+                            
                             current_app.logger.info(f"Удалена группа: {servicegroup.name}")
                             flash(f'✅ Группа "{servicegroup.name}" успешно удалена!', 'success')
                     else:
@@ -89,17 +207,12 @@ def servicegroup():
             else:
                 flash('⚠️ Не указан ID группы для удаления.', 'warning')
 
-        else:
-            # Если action не 'create' и не 'delete', или вообще отсутствует
-            flash('⚠️ Неизвестное действие.', 'warning')
-
-        # После обработки POST-запроса (любого действия) перенаправляем на GET /places
+        # После обработки POST-запроса перенаправляем обратно на список групп
         return redirect(url_for('settings.servicegroup'))
 
     # GET-запрос: отображаем список
-    # Получаем все места из базы данных
     servicegroups = db.session.execute(db.select(ServiceGroup)).scalars().all()
-    return render_template('settings/servicegroup.html', servicegroups = servicegroups)
+    return render_template('settings/servicegroup.html', servicegroups=servicegroups)
 
 @settings_bp.route('/servicegroup/services', methods=['GET', 'POST'])
 @login_required
