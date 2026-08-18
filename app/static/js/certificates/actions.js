@@ -6,7 +6,7 @@ import { money, showFlash, setupModalReset, setupCreateMode } from "../utils.js"
 //import { prepareCreateClientForm } from "../clients/modal.js";
 import { eventBus } from "../core/eventBus.js";
 import { openCreateClientModal } from "../clients/modal.js";
-import { initExpirationType } from "./form.js";
+import { initExpirationType, validateCertificateForm } from "./form.js";
 import { initClientSelect } from "./selection.js";
 import { transactionClient } from "./transaction/tr_modal.js";
 import { getSelectedServices, renderSelectedServices, setEditMode, setCreateMode, setActiveForm } from "./services.js";
@@ -185,6 +185,11 @@ if (dom.editingBtn) {
             setActiveForm(form);
 
             const updateExpirationUI = initExpirationType(form);
+            if (!validateCertificateForm(form)) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
             if (!state.selectedRow) return;
 
             console.log(state.selectedRow.dataset);
@@ -315,27 +320,98 @@ if (dom.spendBtn) {
     });
 }
 
+// const spendForm = document.getElementById("spendCertForm");
+
+// if (spendForm) {
+//     // защита от двойного списания и одновременного использования сертификата 
+//     let spendInProgress = false;
+//     //console.log("SPEND HANDLER ATTACHED");
+//     spendForm.addEventListener("submit", async (e) => {
+//         //console.log("SUBMIT EVENT", Date.now());
+//         e.preventDefault();
+
+//         if (spendInProgress) {
+//             return;
+//         }
+//         spendInProgress = true;
+//         if (!spendClient.select.getValue()) {
+//             alert("Выберите клиента");
+//             return;
+//         }
+//         try {
+//             const certId = document.getElementById("spend_cert_id").value;
+
+//             const data = {
+//                 amount: document.getElementById("spend_amount").value,
+//                 comment: document.getElementById("spend_comment").value,
+//                 client_id: spendClient.select.getValue(),
+//             };
+
+//             const response = await fetch(`/certificates/${certId}/spend`, {
+//                 method: "POST",
+//                 headers: { "Content-Type": "application/json" },
+//                 body: JSON.stringify(data)
+//             });
+
+//             const result = await response.json();
+
+//             if (response.ok) {
+//                 if (result.deactivated) {
+//                     alert("Баланс сертификата = 0\nСертификат автоматически выведен из оборота");
+//                 } else {
+//                     alert("Средства успешно списаны");
+//                 }
+//                 location.reload();
+//             } else {
+//                 alert(result.message);
+//             }
+//         } finally { spendInProgress = false; }        
+//     });
+// }
+
 const spendForm = document.getElementById("spendCertForm");
 
 if (spendForm) {
-    // защита от двойного списания и одновременного использования сертификата 
     let spendInProgress = false;
-    //console.log("SPEND HANDLER ATTACHED");
+
     spendForm.addEventListener("submit", async (e) => {
-        //console.log("SUBMIT EVENT", Date.now());
         e.preventDefault();
 
-        if (spendInProgress) {
-            return;
-        }
-        spendInProgress = true;
+        if (spendInProgress) return;
+
         if (!spendClient.select.getValue()) {
             alert("Выберите клиента");
             return;
         }
+
+        spendInProgress = true;
         try {
             const certId = document.getElementById("spend_cert_id").value;
 
+            // ========== 1. Получаем актуальные данные сертификата ==========
+            const infoResponse = await fetch(`/certificates/${certId}`);
+            if (!infoResponse.ok) {
+                throw new Error("Не удалось получить данные сертификата");
+            }
+            const certInfo = await infoResponse.json();
+
+            // ========== 2. Проверка срока действия ==========
+            if (certInfo.expiration_date) {
+                const expDate = new Date(certInfo.expiration_date);
+                const today = new Date();
+
+                // Приводим обе даты к началу дня для корректного сравнения
+                // (без этого new Date() содержит время, и сравнение будет некорректным)
+                today.setHours(0, 0, 0, 0);
+                expDate.setHours(0, 0, 0, 0);
+
+                if (expDate < today) {
+                    alert("Срок действия сертификата истёк.\nСписание невозможно.");
+                    return; // прерываем, списание не отправляем
+                }
+            }
+
+            // ========== 3. Если всё ок — отправляем списание ==========
             const data = {
                 amount: document.getElementById("spend_amount").value,
                 comment: document.getElementById("spend_comment").value,
@@ -358,12 +434,17 @@ if (spendForm) {
                 }
                 location.reload();
             } else {
-                alert(result.message);
+                // Обработка ошибки с бэкенда (в т.ч. "срок истёк")
+                alert(result.message || "Ошибка при списании");
             }
-        } finally { spendInProgress = false; }        
+        } catch (err) {
+            console.error(err);
+            alert("Произошла ошибка: " + err.message);
+        } finally {
+            spendInProgress = false;
+        }
     });
 }
-
 
 
 // работа кнопки "Вывод"
@@ -456,6 +537,75 @@ if (dom.restoreBtn) {
     });
 }
 
+/**
+ * Очищает серию сертификата от пробелов, нижних подчеркиваний и других пробельных символов.
+ * @param {string} series - Исходная строка серии
+ * @returns {string} - Очищенная строка (например, "ДОНПОД")
+ */
+
+function normalizeSeries(series) {
+    const firstDigitIndex = series.search(/\d/);
+    
+    if (firstDigitIndex === -1) {
+        return series.replace(/[^A-Za-zА-Яа-яЁё]/g, "");
+    }
+    
+    const letterPart = series.slice(0, firstDigitIndex);
+    const digitPart = series.slice(firstDigitIndex);
+    
+    const cleanLetterPart = letterPart.replace(/[^A-Za-zА-Яа-яЁё]/g, "");
+    const cleanDigitPart = digitPart.replace(/\D/g, "");
+    
+    return cleanLetterPart + cleanDigitPart;
+}
+
+const numberInput = document.getElementById("input_number");
+
+if (numberInput) {
+    // Фильтрует любой ввод в реальном времени
+    numberInput.addEventListener("input", (e) => {
+        const originalValue = e.target.value;
+        const cleanedValue = originalValue.replace(/\D/g, ""); // \D = всё, кроме цифр
+        
+        // Обновляем только если реально что-то изменилось (избегаем лишних перерисовок)
+        if (originalValue !== cleanedValue) {
+            // Сохраняем позицию курсора, чтобы не сбивать пользователя
+            const cursorPosition = e.target.selectionStart;
+            const lengthDiff = originalValue.length - cleanedValue.length;
+            
+            e.target.value = cleanedValue;
+            
+            // Корректируем позицию курсора после удаления символов
+            e.target.setSelectionRange(
+                cursorPosition - lengthDiff,
+                cursorPosition - lengthDiff
+            );
+        }
+    });
+
+    // Дополнительная защита от вставки (Ctrl+V, правой кнопкой)
+    numberInput.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const paste = (e.clipboardData || window.clipboardData).getData("text");
+        const cleanedPaste = paste.replace(/\D/g, "");
+        
+        // Вставляем очищенный текст в текущую позицию курсора
+        const start = numberInput.selectionStart;
+        const end = numberInput.selectionEnd;
+        numberInput.value = 
+            numberInput.value.slice(0, start) + 
+            cleanedPaste + 
+            numberInput.value.slice(end);
+        
+        // Ставим курсор после вставленного текста
+        numberInput.setSelectionRange(start + cleanedPaste.length, start + cleanedPaste.length);
+    });
+
+    // Блокировка ввода через перетаскивание (drag & drop)
+    numberInput.addEventListener("drop", (e) => {
+        e.preventDefault();
+    });
+}
 // создание сертификата
 
 if (createForm) {
@@ -476,10 +626,16 @@ if (createForm) {
         errorBlock.classList.add("d-none");
         errorBlock.textContent = "";
 
+        // 1. СНАЧАЛА очищаем поле ввода и сохраняем чистое значение
+        const seriesInput = createForm.elements["series"];
+        const series = normalizeSeries(seriesInput.value);
+        seriesInput.value = series; // Обновляем само поле, чтобы пользователь видел исправленный результат
+        
+        
         const formData = new FormData(createForm);
         ensureFormData(formData, createForm);
 
-        const series = createForm.elements["series"].value.trim();
+        //const series = createForm.elements["series"].value.trim();
         const amount = createForm.elements["total_amount"].value.trim();
 
         const numbers = series.match(/\d+/g);
@@ -492,9 +648,13 @@ if (createForm) {
 
         // Макеты
         const pendingTemplates = createTemplateComponent.getPendingTemplates();
-        console.log(pendingTemplates);
+        //console.log(pendingTemplates);
         formData.append( "templates", JSON.stringify(pendingTemplates));
-
+        if (!validateCertificateForm(createForm)) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
         if (!Number.isFinite(Number(amount))) {
             errorBlock.textContent = "Номинал должен содержать только цифры";
             errorBlock.classList.remove("d-none");
@@ -560,11 +720,16 @@ if (editForm) {
 
         errorBlock.classList.add("d-none");
         errorBlock.textContent = "";
+        // 1. СНАЧАЛА очищаем поле ввода и сохраняем чистое значение
+        const seriesInput = createForm.elements["series"];
+        const series = normalizeSeries(seriesInput.value);
+        //seriesInput.value = series; // Обновляем само поле, чтобы пользователь видел исправленный результат
+        const numberInput = document.getElementById("input_number");
 
         const formData = new FormData(editForm);
         ensureFormData(formData, editForm);
 
-        const series = editForm.elements["series"].value.trim();
+        //const series = editForm.elements["series"].value.trim();
         const amount = editForm.elements["total_amount"].value.trim();
         const numbers = series.match(/\d+/g);
         const seriesAmount = numbers?.at(-1);

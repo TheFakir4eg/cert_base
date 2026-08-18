@@ -36,8 +36,13 @@
                             name="number"
                             id="input_number"
                             value="{{ cert.number if cert else '' }}"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            maxlength="20"
+                            autocomplete="off"
                             required>
-                    </div>
+                        <small class="form-text text-muted">Только цифры</small>
+                    </div> 
 
                     <div>
                         <label class="form-label">Номинал *</label>
@@ -145,15 +150,17 @@
                     </fieldset>
 
                     <div class="cert-options">
-
                         <div id="expirationDateBlock" class="d-none">
                             <label class="form-label">Дата окончания</label>
                             <input
                                 type="date"
                                 class="form-control"
-                                name="expiration_date">
+                                name="expiration_date"
+                                id="expirationDate">
+                            <div class="invalid-feedback" id="expirationDateError">
+                                Дата окончания не может быть раньше сегодняшней.
+                            </div>
                         </div>
-
                         <div id="expirationMonthsBlock" class="d-none">
                             <label class="form-label">Срок действия (месяцев)</label>
                             <input

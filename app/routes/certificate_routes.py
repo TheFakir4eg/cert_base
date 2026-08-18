@@ -1,5 +1,5 @@
 # app/routes/certificates_routes.py
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 import json
 from flask import Blueprint, flash, jsonify, redirect, render_template, current_app, request, url_for, abort, send_file
@@ -135,8 +135,8 @@ def edit_certificate_route():
         
         update_certificate(
             form_data=request.form,
-            new_templates_str = new_templates_str,
-            deleted_ids_str = deleted_ids_str,
+            new_templates_data = new_templates_str,
+            deleted_template_ids = deleted_ids_str,
             expiration_value=expiration_value,
             user_id=current_user.id
         )
@@ -212,11 +212,18 @@ def issue_certificate():
 @login_required
 def spend_certificate_route(certificate_id):
     data = request.get_json()
-
+    certificate = db.get_or_404(Certificate, certificate_id)
     client_id = data.get("client_id")
     amount = data.get("amount")
     comment = data.get("comment")
-
+    # ========== Проверка срока действия ==========
+    if certificate.expiration_date and certificate.expiration_date < date.today():
+        return jsonify({
+            "success": False,
+            "message": "Срок действия сертификата истёк. Списание невозможно.",
+            "expired": True
+        }), 400
+    # ============================================
     try:
         usage, deactivated = spend_certificate(
             certificate_id=certificate_id,
@@ -320,7 +327,16 @@ def restore_certificate(certificate_id):
 def create_certificate_transaction(certificate_id):
     if request.method == "POST":
         data = request.get_json()
-
+        certificate = db.get_or_404(Certificate, certificate_id)
+        # ========== Проверка срока действия ==========
+        if certificate.expiration_date and certificate.expiration_date < date.today():
+            return jsonify({
+                "success": False,
+                "message": "Срок действия сертификата истёк. Списание невозможно.",
+                "expired": True
+            }), 400
+        # ============================================
+        
         try:
             transaction = create_transaction(
                 certificate_id=certificate_id,

@@ -44,6 +44,31 @@ if (transactionForm) {
 
         transactionInProgress = true;
         try {
+
+            const certId = transaction.certificate_id;
+
+            // ========== 1. Получаем актуальные данные сертификата ==========
+            const infoResponse = await fetch(`/certificates/${certId}`);
+            if (!infoResponse.ok) {
+                throw new Error("Не удалось получить данные сертификата");
+            }
+            const certInfo = await infoResponse.json();
+            console.log(certInfo);
+            // ========== 2. Проверка срока действия ==========
+            if (certInfo.expiration_date) {
+                const expDate = new Date(certInfo.expiration_date);
+                const today = new Date();
+
+                // Приводим обе даты к началу дня для корректного сравнения
+                // (без этого new Date() содержит время, и сравнение будет некорректным)
+                today.setHours(0, 0, 0, 0);
+                expDate.setHours(0, 0, 0, 0);
+
+                if (expDate < today) {
+                    alert("Срок действия сертификата истёк.\nСписание невозможно.");
+                    return; // прерываем, списание не отправляем
+                }
+            }
             transaction.comment = document.getElementById("transaction_comment").value;
 
             const response = await fetch(
@@ -83,7 +108,7 @@ if (transactionForm) {
                     "success"
                 );
 
-                setTimeout(() => location.reload(), 200);
+                //setTimeout(() => location.reload(), 200);
             } else {
                 alert(result.message);
             }

@@ -631,6 +631,7 @@ def update_certificate(form_data, new_templates_data: list, deleted_template_ids
     """
     Обновление существующего сертификата.
     """
+    print(form_data)
     cert_id_str = form_data.get('cert_id')
     if not cert_id_str:
         raise ValueError("Не указан ID сертификата")

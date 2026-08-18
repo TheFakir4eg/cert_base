@@ -2,18 +2,95 @@
 from flask import request, current_app
 from flask_login import current_user
 from sqlalchemy import event
-from datetime import datetime
+from datetime import date, datetime
 import json
+from decimal import Decimal
+from uuid import UUID
+from enum import Enum
+from sqlalchemy import inspect
 
-def json_serializable(obj):
-    """Преобразует datetime и другие несериализуемые типы в JSON"""
-    if isinstance(obj, datetime):
-        return obj.isoformat()
-    if isinstance(obj, (list, tuple)):
-        return [json_serializable(item) for item in obj]
-    if isinstance(obj, dict):
-        return {k: json_serializable(v) for k, v in obj.items()}
-    return obj
+# def json_serializable(obj):
+#     """Преобразует datetime и другие несериализуемые типы в JSON"""
+#     if isinstance(obj, datetime):
+#         return obj.isoformat()
+#     if isinstance(obj, (list, tuple)):
+#         return [json_serializable(item) for item in obj]
+#     if isinstance(obj, dict):
+#         return {k: json_serializable(v) for k, v in obj.items()}
+#     return obj
+def json_serializable(value):
+    """
+    Рекурсивно приводит данные к JSON-совместимому виду.
+    """
+    if value is None:
+        return None
+
+    if isinstance(value, (str, int, float, bool)):
+        return value
+
+    if isinstance(value, dict):
+        return {
+            str(k): json_serializable(v)
+            for k, v in value.items()
+        }
+
+    if isinstance(value, (list, tuple, set)):
+        return [
+            json_serializable(item)
+            for item in value
+        ]
+
+    if isinstance(value, datetime):
+        return value.isoformat()
+
+    if isinstance(value, date):
+        return value.isoformat()
+
+    if isinstance(value, Decimal):
+        return str(value)
+
+    if isinstance(value, UUID):
+        return str(value)
+
+    if isinstance(value, Enum):
+        return value.value
+
+    # Если случайно прилетел ORM-объект или другой сложный объект,
+    # лучше не тащить его целиком в JSON.
+    if hasattr(value, "__tablename__"):
+        return getattr(value, "id", str(value))
+
+    if hasattr(value, "to_dict"):
+        return json_serializable(value.to_dict())
+
+    return str(value)
+
+def model_to_audit_dict(obj, exclude=None):
+    """
+    Возвращает только колонки SQLAlchemy-модели,
+    без связей и служебных атрибутов.
+    """
+    exclude = set(exclude or ())
+
+    try:
+        mapper = inspect(obj).mapper
+    except Exception:
+        return {}
+
+    data = {}
+
+    for column_attr in mapper.column_attrs:
+        key = column_attr.key
+
+        if key.startswith("_"):
+            continue
+
+        if key in exclude:
+            continue
+
+        data[key] = getattr(obj, key, None)
+
+    return data
 
 def get_db():
     from app import db
@@ -112,32 +189,36 @@ def register_audit_listeners():
             
 def audit_create(obj, extra_data=None, comment=None):
     """Логирование создания объекта"""
-    if not obj or not hasattr(obj, 'id'):
+    if not obj or not hasattr(obj, "id"):
         return
 
     try:
-        # Основные поля объекта
-        data = {
-            k: v for k, v in vars(obj).items()
-            if not k.startswith('_')
-            and k not in ('password_hash',)
-        }
+        # Берём только колонки модели
+        data = model_to_audit_dict(
+            obj,
+            exclude={"password_hash"}
+        )
 
-        # Дополняем связанными данными
+        # Добавляем дополнительные данные
         if extra_data:
             data.update(extra_data)
 
+        # Приводим всё к JSON-совместимому виду
         clean_data = json_serializable(data)
 
+        # Дополнительно проверяем, что payload реально сериализуется
+        json.dumps(clean_data, ensure_ascii=False)
+
         log_action(
-            action='create',
+            action="create",
             entity_type=obj.__class__.__name__,
             entity_id=obj.id,
             new_data=clean_data,
             comment=comment
         )
-    except Exception as e:
-        current_app.logger.error(f"Ошибка в audit_create: {e}")
+
+    except Exception:
+        current_app.logger.exception("Ошибка в audit_create")
 
 
 # def audit_update(old_data, obj, comment=None):
