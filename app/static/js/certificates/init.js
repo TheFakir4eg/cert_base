@@ -5,6 +5,7 @@ import { applyFilter, getCurrentFilter } from "./filters.js";
 import { showFlash } from "../utils.js";
 import * as ServiceSelector from "../services/selector/index.js";
 import * as CertificateServices from "./services.js";
+import { initCertificateExport } from "./export.js";
 //import { initCertificateTemplates } from "./cert_templates/ct_init.js";
 
 
@@ -83,6 +84,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         activeTab.classList.add("active");
         applyFilter(activeTab.dataset.filter);
     }
-
+    // экспорт текущего списка
+    initCertificateExport();
     
 });

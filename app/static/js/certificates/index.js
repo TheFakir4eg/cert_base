@@ -6,7 +6,7 @@ import "./columnFilters.js";
 import "./filters.js";
 import "./actions.js";
 import "./selection.js";
-
+import { saveInitialOrder } from "./columnFilters.js";
 import "../clients/clients.js";
 import { initTransaction } from "./transaction/tr_index.js";
 
@@ -14,5 +14,6 @@ document.addEventListener(
     "DOMContentLoaded",
     () => {
         initTransaction();
+        saveInitialOrder(); 
     }
 );

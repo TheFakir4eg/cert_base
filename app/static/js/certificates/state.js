@@ -5,6 +5,7 @@ export const state = {
     selectedCertId: null,
     currentSearch: "",
     currentColumnIndex: null,
-    columnFilters: {}
+    columnFilters: {},
+    sortDirection: null,   // "asc" или "desc"
 };
 

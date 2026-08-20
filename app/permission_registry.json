@@ -101,6 +101,10 @@
         {
           "name": "certificates_view_out",
           "description": "Вкладка Выведенные сертификаты"
+        },
+        {
+          "name": "certificates_export",
+          "description": "Экспорт сертификатов"
         }
         
       ]

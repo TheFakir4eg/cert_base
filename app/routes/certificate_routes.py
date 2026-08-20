@@ -9,6 +9,7 @@ from sqlalchemy import Cast, Integer, func
 
 from app import db
 from app.models import Certificate, CertificateSeries, CertificateService, CertificateTemplate, CertificateTemplateLink, CertificateUsage, Client, Place, ServiceGroup, Services, TemplateVersion, User
+from app.services.certificate_excel_export import CertificateExcelExporter
 from app.services.transaction_service import create_transaction, get_certificate_transactions
 from app.utils.permissions import permission_required
 from datetime import datetime
@@ -150,7 +151,73 @@ def edit_certificate_route():
         current_app.logger.error(f"Ошибка обновления сертификата: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
-    
+@certificates_bp.route("/certificates/export", methods=["GET"])
+@login_required
+@permission_required("certificates_page")
+def export_certificates():
+    current_app.logger.info(
+        "Экспорт списка сертификатов пользователем %s",
+        current_user.id
+    )
+
+    # ID сертификатов, переданные frontend
+    certificate_ids = request.args.getlist("id", type=int)
+
+    if not certificate_ids:
+        return jsonify({
+            "error": "Не выбраны сертификаты для выгрузки"
+        }), 400
+
+    # Базовый запрос
+    query = db.select(Certificate).where(
+        Certificate.id.in_(certificate_ids)
+    )
+
+    # Проверка области доступа пользователя
+    if current_user.group_id != 1:
+        query = query.where(
+            Certificate.place_id == current_user.place_id
+        )
+
+    certificates = (
+        db.session.execute(query)
+        .scalars()
+        .all()
+    )
+
+    # ВАЖНО:
+    # SQL IN (...) не гарантирует порядок ID,
+    # поэтому восстанавливаем порядок,
+    # который пришёл от frontend.
+    certificates_by_id = {
+        certificate.id: certificate
+        for certificate in certificates
+    }
+
+    certificates = [
+        certificates_by_id[certificate_id]
+        for certificate_id in certificate_ids
+        if certificate_id in certificates_by_id
+    ]
+
+    if not certificates:
+        return jsonify({
+            "error": "Нет доступных сертификатов для выгрузки"
+        }), 404
+
+    exporter = CertificateExcelExporter()
+    output = exporter.export(certificates)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="certificates.xlsx",
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument"
+            ".spreadsheetml.sheet"
+        )
+    )
+        
 @certificates_bp.route("/certificates/issue", methods=["POST"])
 @login_required
 def issue_certificate():
@@ -449,219 +516,7 @@ def get_certificate_info(certificate_id):
         "expiration_date": certificate.expiration_date.isoformat() if certificate.expiration_date else None,
         "note": certificate.note,
     })
-    
-# @certificates_bp.route("/certificate-templates/<int:template_id>/file", methods=["GET"])
-# @login_required
-# def get_certificate_template_file(template_id):
-#     template = db.session.get(CertificateTemplate,template_id)
 
-#     if not template: abort(404)
-#     if not template.is_active: abort(404)
-#     if not template.exists: abort(404)
-#     if not template.is_valid_path: abort(404)
-    
-#     extension = template.full_path.suffix.lower()
-#     if extension not in current_app.config["ALLOWED_TEMPLATE_EXTENSIONS"]: abort(404)
-    
-#     return send_file(
-#         template.full_path
-#     )
-    
-# @certificates_bp.route("/certificate-templates/files", methods=["GET"])
-# @login_required
-# def get_certificate_template_files():
-#     base_path = Path(current_app.config[ "CERTIFICATE_TEMPLATES_PATH"])
-
-#     current_app.logger.info( "Путь к макетам: %s", base_path)
-#     current_app.logger.info( "Абсолютный путь: %s", base_path.resolve())
-#     current_app.logger.info(
-#         "Существует: %s, папка: %s",
-#         base_path.exists(),
-#         base_path.is_dir()
-#     )
-    
-#     if not base_path.exists():
-#         return jsonify([])
-
-#     if not base_path.is_dir():
-#         return jsonify([])
-
-#     result = []
-
-#     for folder in sorted(base_path.iterdir()):
-#         if not folder.is_dir():
-#             continue
-#         files = []
-#         for file in sorted(folder.iterdir()):
-#             if not file.is_file():
-#                 continue
-#             extension = file.suffix.lower()
-#             if extension not in current_app.config[ "ALLOWED_TEMPLATE_EXTENSIONS"]:
-#                 continue
-#             files.append({
-#                 "filename": file.name,
-#                 "extension": extension,
-#                 "is_image": extension in {
-#                     ".jpg",
-#                     ".jpeg",
-#                     ".png",
-#                     ".webp"
-#                 }
-#             })
-
-#         if files:
-#             result.append({
-#                 "folder": folder.name,
-#                 "files": files,
-#             })
-
-#     return jsonify(result)
-
-# @certificates_bp.route("/certificates/<int:certificate_id>/templates", methods=["POST"])
-# @login_required
-# def add_certificate_template(certificate_id):
-#     certificate = db.session.get( Certificate, certificate_id)
-#     if not certificate:
-#         abort(404)
-#     data = request.get_json() or {}
-#     name = (data.get("name") or "").strip()
-#     folder_path = (data.get("folder_path") or "").strip()
-#     filename = (data.get("filename") or "").strip()
-#     if not name:
-#         return jsonify({
-#             "error": "Не указано название макета"
-#         }), 400
-#     if not folder_path:
-#         return jsonify({
-#             "error": "Не указана папка"
-#         }), 400
-#     if not filename:
-#         return jsonify({
-#             "error": "Не указан файл"
-#         }), 400
-#     base_path = Path( current_app.config[ "CERTIFICATE_TEMPLATES_PATH"]).resolve()
-#     folder = ( base_path / folder_path).resolve()
-#     file_path = ( folder / filename).resolve()
-#     try:
-#         folder.relative_to(base_path)
-#         file_path.relative_to(base_path)
-#     except ValueError:
-#         return jsonify({
-#             "error": "Недопустимый путь"
-#         }), 400
-#     if not folder.is_dir():
-#         return jsonify({
-#             "error": "Папка не существует"
-#         }), 400
-#     if not file_path.is_file():
-#         return jsonify({
-#             "error": "Файл не существует"
-#         }), 400
-#     extension = file_path.suffix.lower()
-#     if extension not in current_app.config[ "ALLOWED_TEMPLATE_EXTENSIONS"]:
-#         return jsonify({
-#             "error": "Тип файла не разрешён"
-#         }), 400
-
-#     template = CertificateTemplate(
-#         name=name,
-#         certificate_id=certificate.id,
-#         folder_path=folder_path,
-#         filename=filename,
-#         user_id=current_user.id,
-#     )
-
-#     db.session.add(template)
-#     db.session.commit()
-
-#     return jsonify({
-#         "id": template.id,
-#         "name": template.name,
-#         "folder_path": template.folder_path,
-#         "filename": template.filename,
-#         "sort_order": template.sort_order,
-#         "is_active": template.is_active,
-#         "url": url_for(
-#             "certificates.get_certificate_template_file",
-#             template_id=template.id
-#         )
-#     }), 201
-    
-# @certificates_bp.route("/certificates/<int:certificate_id>/templates", methods=["GET"])
-# @login_required
-# def get_certificate_templates(certificate_id):
-#     certificate = db.session.get( Certificate, certificate_id)
-#     if not certificate:
-#         abort(404)
-
-#     templates = (
-#         CertificateTemplate.query
-#         .filter_by(
-#             certificate_id=certificate_id,
-#             is_active=True
-#         )
-#         .order_by(
-#             CertificateTemplate.sort_order,
-#             CertificateTemplate.id
-#         )
-#         .all()
-#     )
-#     all_templates = CertificateTemplate.query.all()
-
-#     current_app.logger.info(
-#         "ВСЕ макеты в БД: %s",
-#         [
-#             {
-#                 "id": t.id,
-#                 "certificate_id": t.certificate_id,
-#                 "name": t.name,
-#                 "is_active": t.is_active,
-#             }
-#             for t in all_templates
-#         ]
-#     )
-#     current_app.logger.info(
-#         "Макеты сертификата %s: %s",
-#         certificate_id,
-#         [
-#             {
-#                 "id": t.id,
-#                 "certificate_id": t.certificate_id,
-#                 "name": t.name,
-#                 "is_active": t.is_active,
-#                 "filename": t.filename,
-#             }
-#             for t in templates
-#         ]
-#     )
-#     return jsonify([
-#         {
-#             "id": template.id,
-#             "name": template.name,
-#             "filename": template.filename,
-#             "sort_order": template.sort_order,
-#             "url": url_for(
-#                 "certificates.get_certificate_template_file",
-#                 template_id=template.id
-#             )
-#         }
-#         for template in templates
-#     ])
-    
-# @certificates_bp.route( "/certificate-templates/<int:template_id>", methods=["DELETE"])
-# @login_required
-# def delete_certificate_template(template_id):
-#     success = deactivate_certificate_template(template_id)
-    
-#     if not success:
-#         abort(404) # Или return jsonify({"message": "Не найден"}), 404
-
-#     db.session.commit() # Коммитим здесь, так как это отдельный HTTP-запрос
-
-#     return jsonify({
-#         "message": "Макет удалён",
-#         "id": template_id
-#     }), 200
     
 @certificates_bp.route( "/certificates/<int:certificate_id>/templates", methods=["GET"])
 @login_required
@@ -773,3 +628,8 @@ def remove_certificate_template( certificate_id, template_version_id):
     return jsonify({
         "message": "Версия макета отвязана от сертификата"
     }), 200
+    
+@certificates_bp.route('/export_excel')
+@login_required # Если используете flask-login
+def export_excel():
+    pass

@@ -13,11 +13,24 @@ from sqlalchemy.orm import validates
 from sqlalchemy import Numeric, func, UniqueConstraint
 from decimal import Decimal
 from pathlib import Path
-
+from datetime import datetime
+#from zoneinfo import ZoneInfo  # Python 3.9+
+import pytz
 
 class TimestampMixin:
-    create_date = db.Column(db.DateTime, default=lambda: datetime.now())
-    edit_date = db.Column(db.DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now())
+    create_date = db.Column(
+        db.DateTime(timezone=True), 
+        default=lambda: datetime.now(pytz.timezone("Europe/Moscow"))
+    )
+    edit_date = db.Column(
+        db.DateTime(timezone=True), 
+        default=lambda: datetime.now(pytz.timezone("Europe/Moscow")),
+        onupdate=lambda: datetime.now(pytz.timezone("Europe/Moscow"))
+    )
+
+# class TimestampMixin:
+#     create_date = db.Column(db.DateTime, default=lambda: datetime.now())
+#     edit_date = db.Column(db.DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now())
     
 class Certificate(db.Model, TimestampMixin): # Модель для таблицы certificates
     """Сертификаты

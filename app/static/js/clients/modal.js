@@ -22,16 +22,18 @@ const els = {
     modal: document.getElementById("createClientModal"),
 };
 
+let currentCreateSource = null;
+
 setupPhoneMask(els.phoneInput);
 
 export function openCreateClientModal(prefillName = "", source = null) {
-    //console.log("openCreateClientModal");
+    console.log("openCreateClientModal");
     // console.log(
     //     "open client modal",
     //     document.querySelectorAll(".modal.show"),
     //     document.querySelectorAll(".modal-backdrop")
     // );
-    let currentCreateSource = null;
+    //let currentCreateSource = null;
     currentCreateSource = source;
     
     els.submitMode.value = "post";
@@ -49,6 +51,11 @@ export function openCreateClientModal(prefillName = "", source = null) {
         els.submitMode.value = "api";
     }
 
+    // Если модалка открыта из другого компонента
+    // через eventBus — создаём клиента через API.
+    if (source) {
+        els.submitMode.value = "api";
+    }
 
     els.modalTitle.textContent = "Создать клиента";
 
@@ -70,7 +77,7 @@ export function openCreateClientModal(prefillName = "", source = null) {
 }
 
 export function openEditClientModal(client) {
-    console.log(client);
+    //console.log(client);
     els.modalTitle.textContent = "Редактирование клиента";
     els.submitMode.value = "post";
     els.actionInput.value = "edit";
@@ -113,7 +120,8 @@ export function getClientFormAction() {
 export function getClientFormMeta() {
     return {
         modal: els.modal,
-        submitBtn: els.submitBtn
+        submitBtn: els.submitBtn,
+        source: currentCreateSource
     };
 }
 

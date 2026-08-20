@@ -16,6 +16,8 @@ export const columnFilterPopup = document.getElementById("columnFilterPopup");
 export const columnFilterInput = document.getElementById("columnFilterInput");
 export const applyColumnFilterBtn = document.getElementById("applyColumnFilterBtn");
 export const clearColumnFilterBtn = document.getElementById("clearColumnFilterBtn");
+export const sortAlphaBtn = document.getElementById("sortAlphaBtn");
+export const sortOmegaBtn = document.getElementById("sortOmegaBtn");
 
 export const tbody = document.getElementById("certTableBody");
 
