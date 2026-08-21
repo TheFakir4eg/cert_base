@@ -1,0 +1,49 @@
+<div class="modal fade" id="restoreModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Восстановление сертификата</h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Закрыть"></button>
+            </div>
+
+            <div class="modal-body">
+                <label for="restoreComment" class="form-label">
+                    Комментарий*
+                </label>
+
+                <textarea
+                    id="restoreComment"
+                    class="form-control"
+                    rows="3"
+                    required
+                    maxlength="1000"
+                    placeholder="Укажите причину восстановления..."
+                ></textarea>
+
+                <div id="restoreCommentError"
+                     class="invalid-feedback">
+                    Укажите комментарий.
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Отмена
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="restoreConfirmBtn">
+                    ОК
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>

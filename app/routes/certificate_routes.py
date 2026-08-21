@@ -269,74 +269,109 @@ def issue_certificate():
     
     db.session.flush()
     
-    audit_update(old_data, cert, comment="Выдача сертификата")
+    audit_update(old_data, cert, comment="Выдача сертификата", action='issue')
     db.session.commit()
 
     return {"status": "ok"}
 
 
-@certificates_bp.route("/certificates/<int:certificate_id>/spend", methods=["POST"])
-@login_required
-def spend_certificate_route(certificate_id):
-    data = request.get_json()
-    certificate = db.get_or_404(Certificate, certificate_id)
-    client_id = data.get("client_id")
-    amount = data.get("amount")
-    comment = data.get("comment")
-    # ========== Проверка срока действия ==========
-    if certificate.expiration_date and certificate.expiration_date < date.today():
-        return jsonify({
-            "success": False,
-            "message": "Срок действия сертификата истёк. Списание невозможно.",
-            "expired": True
-        }), 400
-    # ============================================
-    try:
-        usage, deactivated = spend_certificate(
-            certificate_id=certificate_id,
-            client_id=client_id,
-            amount=amount,
-            user_id=current_user.id,
-            comment=comment
-        )
+# @certificates_bp.route("/certificates/<int:certificate_id>/spend", methods=["POST"])
+# @login_required
+# def spend_certificate_route(certificate_id):
+#     data = request.get_json()
+#     certificate = db.get_or_404(Certificate, certificate_id)
+#     client_id = data.get("client_id")
+#     amount = data.get("amount")
+#     comment = data.get("comment")
+#     # ========== Проверка срока действия ==========
+#     if certificate.expiration_date and certificate.expiration_date < date.today():
+#         return jsonify({
+#             "success": False,
+#             "message": "Срок действия сертификата истёк. Списание невозможно.",
+#             "expired": True
+#         }), 400
+#     # ============================================
+#     try:
+#         usage, deactivated = spend_certificate(
+#             certificate_id=certificate_id,
+#             client_id=client_id,
+#             amount=amount,
+#             user_id=current_user.id,
+#             comment=comment
+#         )
 
-        return jsonify({
-            "success": True,
-            "message": "Средства успешно списаны",
-            "deactivated": deactivated
-        })
+#         return jsonify({
+#             "success": True,
+#             "message": "Средства успешно списаны",
+#             "deactivated": deactivated
+#         })
 
-    except ValueError as e:
-        return jsonify({
-            "success": False,
-            "message": str(e)
-        }), 400       
+#     except ValueError as e:
+#         return jsonify({
+#             "success": False,
+#             "message": str(e)
+#         }), 400       
 
-@certificates_bp.route("/certificates/<int:certificate_id>/usages", methods=["GET"])
-@login_required
-def get_certificate_usages(certificate_id):
+# @certificates_bp.route("/certificates/<int:certificate_id>/usages", methods=["GET"])
+# @login_required
+# def get_certificate_usages(certificate_id):
 
-    certificate = Certificate.query.get_or_404(certificate_id)
+#     certificate = Certificate.query.get_or_404(certificate_id)
 
-    usages = (
-        CertificateUsage.query
-        .filter_by(certificate_id=certificate_id)
-        .order_by(CertificateUsage.created_at.desc())
-        .all()
-    )
+#     usages = (
+#         CertificateUsage.query
+#         .filter_by(certificate_id=certificate_id)
+#         .order_by(CertificateUsage.created_at.desc())
+#         .all()
+#     )
 
-    result = []
-    for u in usages:
-        result.append({
-            "amount": float(u.amount),
-            "client": u.client.name or "",
-            "comment": u.comment or "",
-            "date": u.created_at.strftime("%d.%m.%Y %H:%M"),
-            "user": u.user.name
-        })
+#     result = []
+#     for u in usages:
+#         result.append({
+#             "amount": float(u.amount),
+#             "client": u.client.name or "",
+#             "comment": u.comment or "",
+#             "date": u.created_at.strftime("%d.%m.%Y %H:%M"),
+#             "user": u.user.name
+#         })
 
-    return jsonify(result)
+#     return jsonify(result)
 
+# @certificates_bp.post("/certificates/<int:certificate_id>/close")
+# @login_required
+# def close_certificate(certificate_id):
+#     data = request.get_json() or {}
+#     comment = data.get("comment", "").strip()
+
+#     if not comment:
+#         return jsonify({"error": "Необходимо указать причину вывода"}), 400
+
+#     cert = db.session.get(Certificate, certificate_id)
+#     if not cert:
+#         return jsonify({"error": "Not found"}), 404
+
+#     had_balance = cert.balance > 0
+
+#     cert.active = False
+#     cert.edit_user_id = current_user.id
+
+#     record = f"Причина вывода сертификата: {comment}"
+
+#     if cert.note:
+#         cert.note += f"\n\n{record}"
+#     else:
+#         cert.note = record
+
+#     db.session.commit()
+
+#     return jsonify({
+#         "success": True,
+#         "message": (
+#             "Погашен сертификат с положительным балансом"
+#             if had_balance
+#             else "Сертификат успешно выведен"
+#         )
+#     })
 @certificates_bp.post("/certificates/<int:certificate_id>/close")
 @login_required
 def close_certificate(certificate_id):
@@ -352,6 +387,12 @@ def close_certificate(certificate_id):
 
     had_balance = cert.balance > 0
 
+    old_data = {
+        "active": cert.active,
+        "edit_user_id": cert.edit_user_id,
+        "note": cert.note,
+    }
+
     cert.active = False
     cert.edit_user_id = current_user.id
 
@@ -361,6 +402,15 @@ def close_certificate(certificate_id):
         cert.note += f"\n\n{record}"
     else:
         cert.note = record
+
+    db.session.flush()
+
+    audit_update(
+        old_data,
+        cert,
+        comment=comment,
+        action="close"
+    )
 
     db.session.commit()
 
@@ -372,38 +422,185 @@ def close_certificate(certificate_id):
             else "Сертификат успешно выведен"
         )
     })
+    
+# @certificates_bp.route("/certificates/<int:certificate_id>/restore", methods=["POST"])
+# @login_required
+# def restore_certificate(certificate_id):
 
-@certificates_bp.route("/certificates/<int:certificate_id>/restore", methods=["POST"])
+#     cert = db.session.get(Certificate, certificate_id)
+
+#     if not cert:
+#         return jsonify({"error": "Not found"}), 404
+
+#     cert.active = True
+#     cert.edit_user_id = current_user.id
+
+#     db.session.commit()
+
+#     return jsonify({"success": True})
+
+@certificates_bp.route( "/certificates/<int:certificate_id>/restore", methods=["POST"])
 @login_required
 def restore_certificate(certificate_id):
-
     cert = db.session.get(Certificate, certificate_id)
 
     if not cert:
         return jsonify({"error": "Not found"}), 404
 
+    data = request.get_json(silent=True) or {}
+    comment = (data.get("comment") or "").strip()
+
+    if not comment:
+        return jsonify({"error": "Комментарий обязателен"}), 400
+
+    old_data = {
+        "active": cert.active,
+        "edit_user_id": cert.edit_user_id,
+    }
+    # Добавляем комментарий в note
+    date_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+    restore_note = ( f"{date_str} — Восстановление сертификата: {comment}")
+
+    if cert.note:
+        cert.note = f"{cert.note}\n{restore_note}"
+    else:
+        cert.note = restore_note
+
+    # Восстанавливаем сертификат
     cert.active = True
     cert.edit_user_id = current_user.id
+
+    db.session.flush()
+
+    audit_update(
+        old_data,
+        cert,
+        comment=comment,
+        action="restore"
+    )
 
     db.session.commit()
 
     return jsonify({"success": True})
 
-@certificates_bp.route("/certificates/<int:certificate_id>/transaction", methods=["GET", "POST"])
+# @certificates_bp.route( "/certificates/<int:certificate_id>/restore", methods=["POST"])
+# @login_required
+# def restore_certificate(certificate_id):
+#     cert = db.session.get(Certificate, certificate_id)
+#     if not cert:
+#         return jsonify({"error": "Not found"}), 404
+#     old_data = {
+#         "active": cert.active,
+#         "edit_user_id": cert.edit_user_id,
+#     }
+#     cert.active = True
+#     cert.edit_user_id = current_user.id
+#     db.session.flush()
+#     audit_update(
+#         old_data,
+#         cert,
+#         comment="Восстановление сертификата",
+#         action="restore"
+#     )
+
+#     db.session.commit()
+#     return jsonify({"success": True})
+
+# @certificates_bp.route("/certificates/<int:certificate_id>/transaction", methods=["GET", "POST"])
+# @login_required
+# def create_certificate_transaction(certificate_id):
+#     if request.method == "POST":
+#         data = request.get_json()
+#         certificate = db.get_or_404(Certificate, certificate_id)
+#         # ========== Проверка срока действия ==========
+#         if certificate.expiration_date and certificate.expiration_date < date.today():
+#             return jsonify({
+#                 "success": False,
+#                 "message": "Срок действия сертификата истёк. Списание невозможно.",
+#                 "expired": True
+#             }), 400
+#         # ============================================
+        
+#         try:
+#             transaction = create_transaction(
+#                 certificate_id=certificate_id,
+#                 client_id=data["client_id"],
+#                 user_id=current_user.id,
+#                 items=data["items"],
+#                 comment=data.get("comment"),
+#             )
+
+#         except ValueError as e:
+#             return jsonify({
+#                 "success": False,
+#                 "message": str(e)
+#             }), 400
+
+#         #print(transaction)
+#         current_app.logger.info(
+#             "Created transaction %s for certificate %s",
+#             transaction.id,
+#             certificate_id
+#         )
+#         return jsonify({
+#             "success": True,
+#             "transaction_id": transaction.id
+#         })
+#     # GET
+#     transactions = get_certificate_transactions(certificate_id)
+
+#     return jsonify([
+#         {
+#             "id": tx.id,
+#             "date": tx.create_date.strftime("%d.%m.%Y %H:%M"),
+#             "client": (tx.client.full_name if tx.client else ""),
+#             "user": ( tx.user.name if tx.user else ""),
+#             "comment": tx.comment or "",
+#             "amount": str( sum( item.amount for item in tx.items)),
+#             "items": [
+#                 {
+#                     "service_name": item.service_name,
+#                     "quantity": str(item.quantity),
+#                     "price": str(item.price),
+#                     "amount": str(item.amount),
+#                 }
+#                 for item in tx.items
+#             ]
+#         }
+#         for tx in transactions
+#     ])
+
+@certificates_bp.route(
+    "/certificates/<int:certificate_id>/transaction",
+    methods=["GET", "POST"]
+)
 @login_required
 def create_certificate_transaction(certificate_id):
+
     if request.method == "POST":
         data = request.get_json()
+
         certificate = db.get_or_404(Certificate, certificate_id)
+
         # ========== Проверка срока действия ==========
-        if certificate.expiration_date and certificate.expiration_date < date.today():
+        if (
+            certificate.expiration_date
+            and certificate.expiration_date < date.today()
+        ):
             return jsonify({
                 "success": False,
                 "message": "Срок действия сертификата истёк. Списание невозможно.",
                 "expired": True
             }), 400
         # ============================================
-        
+
+        # Запоминаем состояние сертификата ДО операции,
+        # потому что create_transaction() может изменить active.
+        old_certificate_data = {
+            "active": certificate.active,
+            "edit_user_id": certificate.edit_user_id,
+        }
+
         try:
             transaction = create_transaction(
                 certificate_id=certificate_id,
@@ -413,22 +610,83 @@ def create_certificate_transaction(certificate_id):
                 comment=data.get("comment"),
             )
 
+            # Кто выполнил изменение сертификата
+            certificate.edit_user_id = current_user.id
+
+            # Данные созданной транзакции для аудита
+            transaction_audit_data = {
+                "certificate_id": certificate_id,
+                "client_id": transaction.client_id,
+                "user_id": transaction.user_id,
+                "comment": transaction.comment,
+                "items": [
+                    {
+                        "service_id": item.service_id,
+                        "service_name": item.service_name,
+                        "quantity": str(item.quantity),
+                        "price": str(item.price),
+                        "amount": str(item.amount),
+                    }
+                    for item in transaction.items
+                ],
+            }
+
+            # Аудит создания транзакции
+            audit_update(
+                {},
+                transaction,
+                extra_data=transaction_audit_data,
+                comment=(
+                    transaction.comment
+                    or "Списание по сертификату"
+                ),
+                action="transaction",
+            )
+
+            # Если сертификат был автоматически погашен
+            # после списания всего остатка — отдельно фиксируем это.
+            if old_certificate_data["active"] != certificate.active:
+                audit_update(
+                    old_certificate_data,
+                    certificate,
+                    comment="Сертификат автоматически погашен после полного списания",
+                    action="close",
+                )
+
+            db.session.commit()
+
         except ValueError as e:
+            db.session.rollback()
+
             return jsonify({
                 "success": False,
                 "message": str(e)
             }), 400
 
-        #print(transaction)
+        except Exception:
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "Ошибка создания транзакции для сертификата %s",
+                certificate_id
+            )
+
+            return jsonify({
+                "success": False,
+                "message": "Ошибка при создании транзакции"
+            }), 500
+
         current_app.logger.info(
             "Created transaction %s for certificate %s",
             transaction.id,
             certificate_id
         )
+
         return jsonify({
             "success": True,
             "transaction_id": transaction.id
         })
+
     # GET
     transactions = get_certificate_transactions(certificate_id)
 
@@ -436,10 +694,10 @@ def create_certificate_transaction(certificate_id):
         {
             "id": tx.id,
             "date": tx.create_date.strftime("%d.%m.%Y %H:%M"),
-            "client": (tx.client.full_name if tx.client else ""),
-            "user": ( tx.user.name if tx.user else ""),
+            "client": tx.client.full_name if tx.client else "",
+            "user": tx.user.name if tx.user else "",
             "comment": tx.comment or "",
-            "amount": str( sum( item.amount for item in tx.items)),
+            "amount": str(sum(item.amount for item in tx.items)),
             "items": [
                 {
                     "service_name": item.service_name,
@@ -452,7 +710,7 @@ def create_certificate_transaction(certificate_id):
         }
         for tx in transactions
     ])
-    
+        
 @certificates_bp.route("/certificates/<int:certificate_id>/services", methods=["GET"])
 @login_required
 def get_certificate_services(certificate_id):
@@ -512,7 +770,7 @@ def get_certificate_info(certificate_id):
         "require_stamp": certificate.require_stamp,
         "is_single_use": certificate.is_single_use,
         "max_50_percent": certificate.max_50_percent,
-
+        "holder": certificate.holder.name,
         "expiration_date": certificate.expiration_date.isoformat() if certificate.expiration_date else None,
         "note": certificate.note,
     })

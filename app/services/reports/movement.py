@@ -73,17 +73,9 @@ class MovementReport(BaseReport):
             query = query.filter( Certificate.mol_id == filters.mol_id)
         if filters.status is not None:
             if filters.status == "true":
-
-                query = query.filter(
-                    Certificate.active.is_(True)
-                )
-
-
+                query = query.filter( Certificate.active.is_(True))
             elif filters.status == "false":
-
-                query = query.filter(
-                    Certificate.active.is_(False)
-                )
+                query = query.filter( Certificate.active.is_(False))
         return query.all()
 
     def _load_transactions(self, certificate_ids):
@@ -128,7 +120,7 @@ class MovementReport(BaseReport):
             ),
             ReportColumn(
                 key="client",
-                title="Клиент",
+                title="Держатель",
             ),
             ReportColumn(
                 key="issue_date",

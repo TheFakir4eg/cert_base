@@ -116,6 +116,13 @@
       "permissions": [
         { "name": "clients_page", "description": "Доступ к странице клиентов" }
       ]
+    },
+    {
+      "section": "reports",
+      "title": "отчеты",
+      "permissions": [
+        { "name": "reports_page", "description": "Доступ к Отчетам" }
+      ]
     }
   ]
 }

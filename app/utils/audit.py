@@ -221,51 +221,80 @@ def audit_create(obj, extra_data=None, comment=None):
         current_app.logger.exception("Ошибка в audit_create")
 
 
-# def audit_update(old_data, obj, comment=None):
-#     """Для обновления"""
-#     log_action(
-#         action='update',
-#         entity_type=obj.__class__.__name__,
-#         entity_id=obj.id,
-#         old_data=old_data,
-#         new_data={k: getattr(obj, k) for k in old_data.keys()},
-#         comment=comment
-#     )
+# def audit_update( old_data: dict, obj, extra_data=None, comment=None,action='update'):
+#     """Логирование обновления объекта"""
+#     if not obj or not old_data:
+#         return
 
-def audit_update(old_data: dict, obj, extra_data=None, comment=None):
-    """Логирование обновления объекта"""
-    if not obj or not old_data:
+#     try:
+#         # Новые значения по ключам из old_data
+#         new_data = {}
+#         for key in old_data.keys():
+#             try:
+#                 new_data[key] = getattr(obj, key)
+#             except AttributeError:
+#                 new_data[key] = None
+
+#         # Дополняем связанными данными (услуги, макеты и т.д.)
+#         if extra_data:
+#             # Если в old_data тоже есть связанные ключи — оставляем как есть
+#             # а в new_data добавляем актуальные
+#             new_data.update(extra_data)
+
+#         clean_old = json_serializable(old_data)
+#         clean_new = json_serializable(new_data)
+
+#         log_action(
+#             action=action,
+#             entity_type=obj.__class__.__name__,
+#             entity_id=getattr(obj, 'id', None),
+#             old_data=clean_old,
+#             new_data=clean_new,
+#             comment=comment
+#         )
+#     except Exception as e:
+#         current_app.logger.error(f"Ошибка в audit_update: {e}")
+
+def audit_update(old_data: dict,obj,extra_data=None,comment=None,action="update"):
+    """Логирование изменения объекта."""
+
+    if not obj:
         return
 
     try:
+        old_data = old_data or {}
+
         # Новые значения по ключам из old_data
         new_data = {}
+
         for key in old_data.keys():
             try:
                 new_data[key] = getattr(obj, key)
             except AttributeError:
                 new_data[key] = None
 
-        # Дополняем связанными данными (услуги, макеты и т.д.)
+        # Дополняем связанными данными
         if extra_data:
-            # Если в old_data тоже есть связанные ключи — оставляем как есть
-            # а в new_data добавляем актуальные
             new_data.update(extra_data)
 
         clean_old = json_serializable(old_data)
         clean_new = json_serializable(new_data)
 
         log_action(
-            action='update',
+            action=action,
             entity_type=obj.__class__.__name__,
-            entity_id=getattr(obj, 'id', None),
+            entity_id=getattr(obj, "id", None),
             old_data=clean_old,
             new_data=clean_new,
             comment=comment
         )
+
     except Exception as e:
-        current_app.logger.error(f"Ошибка в audit_update: {e}")
-        
+        current_app.logger.error(
+            f"Ошибка в audit_update: {e}",
+            exc_info=True
+        )
+                
 def get_template_links_snapshot(cert):
     """Снимок текущих связей сертификата с версиями макетов"""
     result = []

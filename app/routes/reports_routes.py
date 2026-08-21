@@ -67,18 +67,65 @@ def audit_log():
                          actions=[a[0] for a in actions],
                          entities=[e[0] for e in entities])
     
+# @reports_bp.route('/audit/log/<int:log_id>')
+# @login_required
+# def get_audit_log(log_id):
+#     log = AuditLog.query.get_or_404(log_id)
+    
+#     changes = []
+    
+#     if log.old_data and log.new_data:
+#         for key in log.new_data:
+#             old_val = log.old_data.get(key)
+#             new_val = log.new_data.get(key)
+            
+#             if old_val != new_val:
+#                 changes.append({
+#                     'field': key,
+#                     'old': old_val,
+#                     'new': new_val
+#                 })
+
+#     return jsonify({
+#         'id': log.id,
+#         'created_at': log.create_date.strftime('%d.%m.%Y %H:%M:%S') if log.create_date else None,
+#         'user_name': log.user.name if log.user else None,
+#         'action': log.action,
+#         'entity_type': log.entity_type,
+#         'entity_id': log.entity_id,
+#         'old_data': log.old_data,
+#         'new_data': log.new_data,
+#         'changes': changes,          # ← новое поле
+#         'comment': log.comment,
+#         'ip_address': log.ip_address
+#     })
+
 @reports_bp.route('/audit/log/<int:log_id>')
 @login_required
 def get_audit_log(log_id):
     log = AuditLog.query.get_or_404(log_id)
-    
+
     changes = []
-    
-    if log.old_data and log.new_data:
-        for key in log.new_data:
-            old_val = log.old_data.get(key)
-            new_val = log.new_data.get(key)
-            
+
+    old_data = log.old_data or {}
+    new_data = log.new_data or {}
+
+    # Создание объекта:
+    # old_data пустой, поэтому показываем все новые значения.
+    if not old_data and new_data:
+        for key, new_val in new_data.items():
+            changes.append({
+                'field': key,
+                'old': None,
+                'new': new_val
+            })
+
+    # Изменение существующего объекта
+    else:
+        for key in new_data:
+            old_val = old_data.get(key)
+            new_val = new_data.get(key)
+
             if old_val != new_val:
                 changes.append({
                     'field': key,
@@ -88,18 +135,20 @@ def get_audit_log(log_id):
 
     return jsonify({
         'id': log.id,
-        'created_at': log.create_date.strftime('%d.%m.%Y %H:%M:%S') if log.create_date else None,
+        'created_at': (
+            log.create_date.strftime('%d.%m.%Y %H:%M:%S')
+            if log.create_date else None
+        ),
         'user_name': log.user.name if log.user else None,
         'action': log.action,
         'entity_type': log.entity_type,
         'entity_id': log.entity_id,
-        'old_data': log.old_data,
-        'new_data': log.new_data,
-        'changes': changes,          # ← новое поле
+        'old_data': old_data,
+        'new_data': new_data,
+        'changes': changes,
         'comment': log.comment,
         'ip_address': log.ip_address
-    })
-    
+    })    
 @reports_bp.route("/movement", methods=["GET"])
 def movement_report():
     report = None

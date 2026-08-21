@@ -515,27 +515,100 @@ if (dom.closeNote) {
 }
 
 // работа кнопки "Восстановить"
+// работа кнопки "Восстановить"
 if (dom.restoreBtn) {
-    dom.restoreBtn.addEventListener("click", async () => {
+    dom.restoreBtn.addEventListener("click", () => {
         if (!state.selectedRow) return;
 
+        const commentInput = document.getElementById("restoreComment");
+        const commentError = document.getElementById("restoreCommentError");
+
+        commentInput.value = "";
+        commentInput.classList.remove("is-invalid");
+        commentError.style.display = "";
+
+        const modal = new bootstrap.Modal(
+            document.getElementById("restoreModal")
+        );
+
+        modal.show();
+
+        // Фокус после открытия модалки
+        document.getElementById("restoreModal").addEventListener(
+            "shown.bs.modal",
+            () => commentInput.focus(),
+            { once: true }
+        );
+    });
+}
+
+const restoreConfirmBtn = document.getElementById("restoreConfirmBtn");
+
+if (restoreConfirmBtn) {
+    restoreConfirmBtn.addEventListener("click", async () => {
+        if (!state.selectedRow) return;
+
+        const commentInput = document.getElementById("restoreComment");
+        const comment = commentInput.value.trim();
+        if (!comment) {
+            commentInput.classList.add("is-invalid");
+            commentInput.focus();
+            return;
+        }
+        commentInput.classList.remove("is-invalid");
         const certId = state.selectedRow.dataset.id;
-
-        const response = await fetch(`/certificates/${certId}/restore`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" }
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            showFlash("Сертификат восстановлен", "success");
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            alert(result.error || "Ошибка");
+        restoreConfirmBtn.disabled = true;
+        try {
+            const response = await fetch( `/certificates/${certId}/restore`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        comment: comment
+                    })
+                }
+            );
+            const result = await response.json();
+            if (response.ok) {
+                const modalElement = document.getElementById("restoreModal");
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                modal.hide();
+                showFlash("Сертификат восстановлен", "success");
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert(result.error || "Ошибка");
+            }
+        } catch (error) {
+            console.error("Ошибка восстановления сертификата:", error);
+            alert("Ошибка при восстановлении сертификата");
+        } finally {
+            restoreConfirmBtn.disabled = false;
         }
     });
 }
+// if (dom.restoreBtn) {
+//     dom.restoreBtn.addEventListener("click", async () => {
+//         if (!state.selectedRow) return;
+
+//         const certId = state.selectedRow.dataset.id;
+
+//         const response = await fetch(`/certificates/${certId}/restore`, {
+//             method: "POST",
+//             headers: { "Content-Type": "application/json" }
+//         });
+
+//         const result = await response.json();
+
+//         if (response.ok) {
+//             showFlash("Сертификат восстановлен", "success");
+//             setTimeout(() => location.reload(), 1500);
+//         } else {
+//             alert(result.error || "Ошибка");
+//         }
+//     });
+// }
 
 /**
  * Очищает серию сертификата от пробелов, нижних подчеркиваний и других пробельных символов.

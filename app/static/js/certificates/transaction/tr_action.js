@@ -108,7 +108,7 @@ if (transactionForm) {
                     "success"
                 );
 
-                //setTimeout(() => location.reload(), 200);
+                setTimeout(() => location.reload(), 200);
             } else {
                 alert(result.message);
             }

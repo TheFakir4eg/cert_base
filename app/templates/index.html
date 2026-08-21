@@ -10,12 +10,13 @@
         </a>
     </div>
     <!-- Кнопка Отчеты  (Reports)-->
-    <div class="col-md-3 mb-3">
-        <a href="{{ url_for('reports.list_reports') }}" 
-            class="btn btn-success d-block h-100">
-            Отчеты 
-        </a>
-    </div>
-
+    {% if current_user.has_permission('reports_page') %}
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('reports.list_reports') }}" 
+                class="btn btn-success d-block h-100">
+                Отчеты 
+            </a>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

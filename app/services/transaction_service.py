@@ -19,23 +19,83 @@ from app.models import (
 # Public API
 # ======================================================================
 
-def create_transaction(
-    certificate_id: int,
-    client_id: int | None,
-    user_id: int,
-    items: list[dict],
-    comment: str | None = None,
-) -> CertificateTransaction:
+# def create_transaction(
+#     certificate_id: int,
+#     client_id: int | None,
+#     user_id: int,
+#     items: list[dict],
+#     comment: str | None = None,
+# ) -> CertificateTransaction:
+#     """
+#     Создает новую транзакцию списания по сертификату.
+
+#     Алгоритм:
+#         1. Блокировка сертификата.
+#         2. Проверка возможности списания.
+#         3. Создание CertificateTransaction.
+#         4. Создание CertificateTransactionItem.
+#         5. Проверка остатка.
+#         6. Commit.
+
+#     Args:
+#         certificate_id: ID сертификата.
+#         client_id: ID клиента, получившего услуги.
+#         user_id: Пользователь, проводящий операцию.
+#         items: Список услуг.
+
+#             [
+#                 {
+#                     "service_id": 1,
+#                     "quantity": Decimal("2")
+#                 }
+#             ]
+
+#         comment: Комментарий.
+
+#     Returns:
+#         CertificateTransaction
+#     """
+#     certificate = _lock_certificate(certificate_id)
+
+#     validated = validate_transaction( certificate=certificate, items=items,)
+
+#     transaction = CertificateTransaction(
+#         certificate=certificate,
+#         client_id=client_id,
+#         user_id=user_id,
+#         comment=comment,
+#     )
+
+#     db.session.add(transaction)
+
+#     for item in validated["items"]:
+#         transaction.items.append(
+#             _create_transaction_item(
+#                 service=item["service"],
+#                 quantity=item["quantity"],
+#                 price=item["price"],
+#                 amount=item["amount"],
+#             )
+#         )
+#     if validated["balance_after"] == Decimal("0.00"):
+        
+#         certificate.active = False
+
+#     try:
+#         db.session.commit()
+#         print("Успешная транзакция")
+#     except:
+#         db.session.rollback()
+#         raise
+
+#     return transaction
+def create_transaction( certificate_id: int, client_id: int | None, user_id: int, items: list[dict], comment: str | None = None,) -> CertificateTransaction:
     """
     Создает новую транзакцию списания по сертификату.
 
-    Алгоритм:
-        1. Блокировка сертификата.
-        2. Проверка возможности списания.
-        3. Создание CertificateTransaction.
-        4. Создание CertificateTransactionItem.
-        5. Проверка остатка.
-        6. Commit.
+    Commit здесь НЕ выполняется.
+    Функция изменяет текущую SQLAlchemy session и делает flush(),
+    чтобы получить ID созданной транзакции.
 
     Args:
         certificate_id: ID сертификата.
@@ -55,6 +115,7 @@ def create_transaction(
     Returns:
         CertificateTransaction
     """
+
     certificate = _lock_certificate(certificate_id)
 
     validated = validate_transaction(
@@ -80,19 +141,15 @@ def create_transaction(
                 amount=item["amount"],
             )
         )
+
     if validated["balance_after"] == Decimal("0.00"):
-        
         certificate.active = False
 
-    try:
-        db.session.commit()
-        print("Успешная транзакция")
-    except:
-        db.session.rollback()
-        raise
+    # INSERT transaction + items и UPDATE certificate
+    # отправляются в БД, transaction.id становится доступен.
+    db.session.flush()
 
     return transaction
-
 
 def get_certificate_transactions(
     certificate_id: int,

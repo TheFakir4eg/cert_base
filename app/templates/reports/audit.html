@@ -54,7 +54,7 @@
                 </div>
                 <div class="col-md-2">
                     <label>По дату</label>
-                    <input type="date" name="date_to" class="form-control" value="{{ request.args.get('date_from') if request.args.get('date_from') else '' }}">
+                    <input type="date" name="date_to" class="form-control" value="{{ request.args.get('date_to') if request.args.get('date_to') else '' }}">
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">Применить фильтры</button>
@@ -81,7 +81,18 @@
             <tr>
                 <td>{{ log.create_date.strftime('%d.%m.%Y %H:%M:%S') }}</td>
                 <td>{{ log.user.name if log.user else '—' }}</td>
-                <td><span class="badge bg-{{ 'success' if log.action=='create' else 'warning' if log.action=='update' else 'danger' }}">{{ log.action }}</span></td>
+                <td>
+                    <span class="badge
+                        bg-{{
+                            'success' if log.action in ['create', 'issue']
+                            else 'warning' if log.action == 'update'
+                            else 'info' if log.action == 'restore'
+                            else 'primary' if log.action == 'transaction'
+                            else 'danger'
+                        }}">
+                        {{ log.action }}
+                    </span>
+                </td>
                 <td><strong>{{ log.entity_type }}</strong></td>
                 <td>{{ log.entity_id or '—' }}</td>
                 <td>{{ log.place.name if log.place else '—' }}</td>

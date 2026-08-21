@@ -46,8 +46,18 @@ export function openTransactionModal() {
     modal.show();
 }
 
-export function fillTransactionModal() {
+// Заполняет поля формы предустановленными значениями
+export async function fillTransactionModal() {
+    
+    // ========== Получаем актуальные данные сертификата ==========
+    const infoResponse = await fetch(`/certificates/${transaction.certificate_id}`);
+    if (!infoResponse.ok) {
+        throw new Error("Не удалось получить данные сертификата");
+    }
+    const certInfo = await infoResponse.json();
+    //console.log("certInfo:", certInfo);
     document.getElementById("transaction_cert_id").value = transaction.certificate_id;
     document.getElementById("transaction_servicegroup_id").value = transaction.servicegroup_id ?? "";
     document.getElementById("transaction_balance").value = transaction.balance.toFixed(2);
+    document.getElementById("certificate_holder").value = certInfo.holder;
 }
