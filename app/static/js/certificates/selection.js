@@ -63,12 +63,15 @@ function updateButtonsState() {
     }
 }
 
+// выпадающий список клиентов в модальных окнах
 export function initClientSelect(selector) {
     const select = new TomSelect(selector, {
         create: false,
         placeholder: "Начните вводить клиента..."
+        
     });
-
+    //console.log("DOM options:", document.querySelector(selector).options);
+    //console.log("TomSelect options:", select.options);
     let currentSearch = "";
 
     select.on("type", (str) => {

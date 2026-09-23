@@ -73,14 +73,15 @@ def list_clients():
 
                     if client:
                         # Проверим, есть ли сертификаты, связанные с этим клиентом
-                        associated_certificates = db.session.execute(
-                            db.select(Certificate).filter_by(client_id=client_id)
-                        ).scalars().all()
-
-                        if associated_certificates:
+                        # проверка как владельца сертификата
+                        associated_certificates = db.session.execute( db.select(Certificate).filter_by(client_id=client_id)).scalars().all()
+                        # UPD 17.09.26
+                        # проверка как получателя услуг
+                        payment_exists = db.session.execute(db.select(Certificate).filter_by(spending_client_id=client_id)).scalars().all()
+                        if associated_certificates or payment_exists:
                             flash(f'❌ Невозможно удалить клиента "{client.full_name}", так как с ним связаны сертификаты.', 'warning')
                         else:
-                            # Удаляем место
+                            # Удаляем клиента
                             db.session.delete(client)
                             db.session.commit()
                             current_app.logger.info(f"Удален клиент: {client.full_name}")

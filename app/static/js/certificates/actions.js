@@ -497,7 +497,6 @@ if (dom.closeForm) {
         e.preventDefault();
 
         const certId = state.selectedRow.dataset.id;
-
         dom.closeModal.hide();
 
         await closeCertificate(
@@ -514,7 +513,6 @@ if (dom.closeNote) {
     });
 }
 
-// работа кнопки "Восстановить"
 // работа кнопки "Восстановить"
 if (dom.restoreBtn) {
     dom.restoreBtn.addEventListener("click", () => {
