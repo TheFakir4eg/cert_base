@@ -24,13 +24,220 @@ const editForm = document.getElementById("editCertForm");
 const editTemplateComponent = initCertificateTemplates( editForm );
 
 // обработка двойного клика по строке  - вызов модалки "история транзакций"
+// UPD 24.09.2026 
+// переделываем модалку. Теперь по двойному клику открывается окно информации о сертификате со списком транзакций
 dom.tbody.addEventListener("dblclick", async (e) => {
     const row = e.target.closest(".cert-row");
     if (!row) return;
-    const certId = row.dataset.id;
+    //const certId = row.dataset.id; 
     //await openUsageHistory(certId);
-    await openTransactionHistory(certId);
+    //await openTransactionHistory(certId);
+    await openCertificateView(row);
 });
+
+export async function openCertificateView(row) {
+    const modalElement = document.getElementById("certificateViewModal");
+
+    if (!modalElement) {
+        console.error("Модалка просмотра сертификата не найдена");
+        return;
+    }
+
+    const certId = row.dataset.id;
+
+    // Основные данные
+    document.getElementById("view_series").value = row.dataset.series || "";
+    document.getElementById("view_number").value = row.dataset.number || "";
+    //document.getElementById("view_total_amount").value = row.dataset.totalAmount ? money(row.dataset.totalAmount) : "";
+    document.getElementById("view_spending_type").value = row.dataset.spendingType === "count" ? "На услуги поштучно" : "Классический";
+
+    // Срок действия
+    document.getElementById("view_expiration").value = row.dataset.expirationDate ? row.dataset.expirationDate : "Не ограничен";
+
+    // Информация о состоянии сертификата
+    document.getElementById("view_total_amount_info").value = row.dataset.totalAmount ? money(row.dataset.totalAmount) : "";
+    document.getElementById("view_balance").value = row.dataset.balance ? money(row.dataset.balance) : "0.00";
+    document.getElementById("view_status").value = getCertificateStatusName(row.dataset.status);
+    document.getElementById("view_create_date").value = row.dataset.createDate || "";
+    document.getElementById("view_issue_date").value = row.dataset.issueDate || "";
+    document.getElementById("view_client_name").value = row.dataset.clientName || "Не выдан";
+    document.getElementById("view_creator_name").value = row.dataset.creatorName || "";
+    document.getElementById("view_editor_name").value = row.dataset.editorName || "";
+
+    // Условия
+    document.getElementById("view_require_original").checked = row.dataset.requireOriginal === "True";
+    document.getElementById("view_require_stamp").checked = row.dataset.requireStamp === "True";
+    document.getElementById("view_is_single_use").checked = row.dataset.isSingleUse === "True";
+    document.getElementById("view_max_50_percent").checked = row.dataset.maxPercent === "True";
+
+    // Дополнительная информация
+    document.getElementById("view_servicegroup").value = row.dataset.servicegroupName || "Не выбрано";
+    document.getElementById("view_reason").value = row.dataset.reason || "";
+    document.getElementById("view_place").value = row.dataset.placeName || "";
+    document.getElementById("view_issue_place").value = row.dataset.issuePlaceName || "";
+    document.getElementById("view_mol").value = row.dataset.molName || "";
+    document.getElementById("view_note").value = row.dataset.note || "";
+
+    // Услуги
+    await loadViewServices(certId);
+
+    // История
+    await loadViewTransactions(certId);
+
+    bootstrap.Modal
+        .getOrCreateInstance(modalElement)
+        .show();
+}
+
+function getCertificateStatusName(status) {
+    switch (status) {
+        case "new":
+            return "Новый";
+        case "issued":
+            return "Выдан";
+        case "zero":
+            return "Погашен";
+        default:
+            return status || "";
+    }
+}
+
+async function loadViewServices(certificateId) {
+    const container = document.getElementById(
+        "view_certificateServices"
+    );
+
+    container.innerHTML = `
+        <div class="text-center text-muted py-2">
+            Загрузка...
+        </div>
+    `;
+
+    try {
+        const response = await fetch(
+            `/certificates/${certificateId}/services`
+        );
+
+        if (!response.ok) {
+            throw new Error("Ошибка загрузки услуг");
+        }
+
+        const services = await response.json();
+
+        container.innerHTML = "";
+
+        if (!services.length) {
+            container.innerHTML = `
+                <div class="list-group-item text-muted">
+                    Услуги не заданы
+                </div>
+            `;
+            return;
+        }
+
+        services.forEach(service => {
+            const item = document.createElement("div");
+
+            item.className =
+                "list-group-item d-flex align-items-center gap-3";
+
+            item.innerHTML = `
+                <span class="text-muted">
+                    ${service.code || ""}
+                </span>
+
+                <span>
+                    ${service.name || ""}
+                </span>
+            `;
+
+            container.appendChild(item);
+        });
+
+    } catch (error) {
+        console.error(
+            "Ошибка загрузки услуг сертификата:",
+            error
+        );
+
+        container.innerHTML = `
+            <div class="list-group-item text-danger">
+                Не удалось загрузить услуги
+            </div>
+        `;
+    }
+}
+
+async function loadViewTransactions(certId) {
+    const table = document.getElementById( "view_usageHistoryTable");
+    const emptyText = document.getElementById( "view_noUsagesText");
+    table.innerHTML = `
+        <tr>
+            <td colspan="6"
+                class="text-center text-muted py-3">
+                Загрузка...
+            </td>
+        </tr>
+    `;
+
+    try {
+        const response = await fetch( `/certificates/${certId}/transaction`);
+        if (!response.ok) {
+            throw new Error("Ошибка загрузки истории");
+        }
+
+        const data = await response.json();
+        table.innerHTML = "";
+
+        if (data.length === 0) {
+            emptyText.classList.remove("d-none");
+            return;
+        }
+
+        emptyText.classList.add("d-none");
+
+        data.forEach(tx => {
+            const services = tx.items
+                .map(item => `
+                    ${item.service_name}
+                    (${item.quantity} × ${money(item.price)})
+                `)
+                .join("<br>");
+
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td>${tx.date}</td>
+                <td>${tx.client}</td>
+                <td>${services}</td>
+                <td>${money(tx.amount)}</td>
+                <td>${tx.user}</td>
+                <td class="usage-comment">
+                    ${tx.comment ?? ""}
+                </td>
+            `;
+
+            table.appendChild(tr);
+        });
+
+    } catch (error) {
+        console.error(
+            "Ошибка загрузки истории сертификата:",
+            error
+        );
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="6"
+                    class="text-center text-danger py-3">
+                    Не удалось загрузить историю списаний
+                </td>
+            </tr>
+        `;
+        emptyText.classList.add("d-none");
+    }
+}
+//====================================================
 
 eventBus.on("client:created", ({ client, source }) => {
     for (const item of [issueClient, spendClient, transactionClient]) {
@@ -191,18 +398,14 @@ if (dom.editingBtn) {
                 return;
             }
             if (!state.selectedRow) return;
-
-            console.log(state.selectedRow.dataset);
-
-            const certificateId = state.selectedRow.dataset.id;
-            
+            //console.log(state.selectedRow.dataset);
+            const certificateId = state.selectedRow.dataset.id;   
             const response = await fetch(`/certificates/${certificateId}/services`);
 
             if (!response.ok) {
                 console.error("Ошибка загрузки услуг сертификата");
                 return;
             }
-
             const services = await response.json();
 
             setEditMode(services);

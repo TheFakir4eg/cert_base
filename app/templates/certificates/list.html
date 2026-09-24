@@ -409,6 +409,8 @@
     {% set submit_text = "Сохранить" %}
     {% set cert = None %}
     {% include "certificates/_cert_modal_new.html" %}
+    <!-- Модальное окно просмотра сертификата --> 
+    {% include "certificates/_certificate_view_modal.html" %}
     <!-- Модальное окно для выдачи сертификата --> 
     {% include "certificates/_issue_modal.html" %}
     <!-- Модальное окно для списания средств с сертификата --> 

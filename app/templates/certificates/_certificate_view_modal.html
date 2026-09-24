@@ -1,0 +1,264 @@
+<!-- /app/templates/certificates/_certificate_view_modal.html -->
+
+<div class="modal fade"
+     id="certificateViewModal"
+     tabindex="-1"
+     aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"> Информация о сертификате</h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+            </div>
+            <div class="modal-body cert-form">
+                <!-- Верхняя строка -->
+                <div class="cert-top-row">
+                    <div>
+                        <label class="form-label">Серия</label>
+                        <input type="text"
+                               class="form-control"
+                               id="view_series"
+                               readonly>
+                    </div>
+                    <div>
+                        <label class="form-label">Номер</label>
+                        <input type="text"
+                               class="form-control"
+                               id="view_number"
+                               readonly>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Срок действия</label>
+                        <input type="text"
+                               class="form-control"
+                               id="view_expiration"
+                               readonly>
+                    </div>
+                    <div>
+                        <label class="form-label">Тип списания</label>
+                        <input type="text"
+                               class="form-control"
+                               id="view_spending_type"
+                               readonly>
+                    </div>
+                </div>
+
+                <!-- Информация о состоянии сертификата -->
+                <div class="cert-info-block mt-3">
+                    <div class="cert-info-grid">
+                        <div>
+                            <label class="form-label">Номинал</label>
+                            <input type="text"
+                                class="form-control"
+                                id="view_total_amount_info"
+                                readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">Баланс</label>
+                            <input type="text"
+                                class="form-control"
+                                id="view_balance"
+                                readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">Статус</label>
+                            <input type="text"
+                                class="form-control"
+                                id="view_status"
+                                readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">Дата создания</label>
+                            <input type="text"
+                                class="form-control"
+                                id="view_create_date"
+                                readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">Дата выдачи</label>
+                            <input type="text"
+                                class="form-control"
+                                id="view_issue_date"
+                                readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">Кому выдан</label>
+                            <input type="text"
+                                class="form-control"
+                                id="view_client_name"
+                                readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">Создал</label>
+                            <input type="text"
+                                class="form-control"
+                                id="view_creator_name"
+                                readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">Последний изменил</label>
+                            <input type="text"
+                                class="form-control"
+                                id="view_editor_name"
+                                readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Услуги сертификата -->
+                <div class="row mt-3" id="view_certificateServicesBlock">
+                    <div class="col-12">
+                        <label class="form-label"> Услуги сертификата</label>
+                        <div id="view_certificateServices"
+                             class="list-group mt-2">
+                        </div>
+                    </div>
+                </div>
+                <!-- Средний блок -->
+                <div class="cert-middle-row mt-3">
+                    <fieldset class="cert-conditions">
+                        <legend>Условия</legend>
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="view_require_original"
+                                disabled>
+                            <label class="form-check-label">
+                                Требуется оригинал сертификата
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="view_require_stamp"
+                                disabled>
+                            <label class="form-check-label">
+                                Требуется печать организации
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="view_is_single_use"
+                                disabled>
+                            <label class="form-check-label">
+                                Изымаемый
+                                (гашение при первом использовании)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="view_max_50_percent"
+                                disabled>
+                            <label class="form-check-label">
+                                Не более 50% от стоимости услуги
+                            </label>
+                        </div>
+                    </fieldset>
+                    <div class="cert-options">
+                        <div>
+                            <label class="form-label"> Группа услуг</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="view_servicegroup"
+                                   readonly>
+                        </div>
+                    </div>
+                </div>
+                <!-- Макет -->
+                <div class="cert-preview">
+                    {% include "certificates/_certificate_templates.html" %}
+                </div>
+                <!-- Нижняя часть -->
+                <div class="cert-bottom-row">
+                    <div>
+                        <label class="form-label"> Причина</label>
+                        <input type="text"
+                               class="form-control"
+                               id="view_reason"
+                               readonly>
+                    </div>
+                    <div>
+                        <label class="form-label"> Место хранения</label>
+                        <input type="text"
+                               class="form-control"
+                               id="view_place"
+                               readonly>
+                    </div>
+                    <div>
+                        <label class="form-label"> Место выдачи</label>
+                        <input type="text"
+                               class="form-control"
+                               id="view_issue_place"
+                               readonly>
+                    </div>
+                    <div>
+                        <label class="form-label"> МОЛ</label>
+                        <input type="text"
+                               class="form-control"
+                               id="view_mol"
+                               readonly>
+                    </div>
+
+                </div>
+
+                <!-- Комментарий -->
+                <div class="cert-comment-row mt-3">
+                    <label class="form-label"> Комментарий</label>
+                    <textarea
+                        class="form-control form-comment-auto"
+                        id="view_note"
+                        readonly>
+                    </textarea>
+                </div>
+
+                <!-- ===================================== -->
+                <!-- История транзакций -->
+                <!-- ===================================== -->
+
+                <hr class="my-4">
+                <div class="d-flex align-items-center mb-2">
+                    <h6 class="mb-0">
+                        История списаний
+                    </h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th>Клиент</th>
+                                <th>Услуги</th>
+                                <th>Сумма</th>
+                                <th>Пользователь</th>
+                                <th>Комментарий</th>
+                            </tr>
+                        </thead>
+                        <tbody id="view_usageHistoryTable">
+                        </tbody>
+                    </table>
+                </div>
+                <div id="view_noUsagesText"
+                     class="text-center text-muted d-none py-3">
+                    Списаний пока нет
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Закрыть
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
