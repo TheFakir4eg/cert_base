@@ -1,7 +1,7 @@
 // /app/static/certificates/transaction/tr_index.js
 
 import { renderTransaction } from "./tr_render.js";
-import { openTransactionModal, openTransactionItemModal, fillTransactionModal } from "./tr_modal.js";
+import { openTransactionModal, openTransactionItemModal, fillTransactionModal, resetTransactionModal } from "./tr_modal.js";
 import { initTransactionItemModal, prepareTransactionItemSelect }from "./tr_item_modal.js";
 import { addItem, removeItem } from "./tr_action.js";
 import { eventBus } from "../../core/eventBus.js";
@@ -18,6 +18,8 @@ eventBus.on(
     "transaction:open",
     async ({id, balance, servicegroupId}) => {
         clearTransaction();
+        resetTransactionModal();
+        //transactionClient.select.clear();
         //console.log(transaction.items);
 
         //console.log(transactionItems.innerHTML);

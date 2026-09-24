@@ -3,6 +3,7 @@
 import { renderTransaction } from "./tr_render.js";
 import { transaction } from "./tr_state.js";
 import { showFlash } from "../../utils.js";
+import { getTransactionPrice } from "./tr_item_modal.js"; 
 
 export function addItem(item) {
     transaction.items.push(item);
@@ -69,6 +70,21 @@ if (transactionForm) {
                     return; // прерываем, списание не отправляем
                 }
             }
+
+            // ========== 3. Подтверждение одноразового сертификата ==========
+            if (certInfo.is_single_use) {
+                const confirmed = confirm(
+                    "Внимание!\n\n" +
+                    "Этот сертификат является одноразовым.\n" +
+                    "После проведения транзакции сертификат будет погашен и станет неактивным.\n\n" +
+                    "Вы уверены, что хотите провести транзакцию?"
+                );
+
+                if (!confirmed) {
+                    return;
+                }
+            }
+
             transaction.comment = document.getElementById("transaction_comment").value;
 
             const response = await fetch(
@@ -84,7 +100,10 @@ if (transactionForm) {
                         items: transaction.items.map(item => ({
                             service_id: item.service_id,
                             quantity: item.quantity,
-                            price: item.price
+                            // UPD 24.09.2026 
+                            // считываем параметр "max_50_percent".
+                            // если true, то режем цену пополам
+                            price: getTransactionPrice(item.price)
                         }))
                     })
                 }

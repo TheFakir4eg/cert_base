@@ -78,6 +78,14 @@ export function applyPriceInputState() {
 //         });
 // }
 
+export function getTransactionPrice(price) {
+    if (transaction.max_50_percent) {
+        return price / 2;
+    }
+
+    return price;
+}
+
 function loadServices(callback) {
     // Проверяем, что ID сертификата установлен
     if (!transaction.certificate_id) {
@@ -133,10 +141,18 @@ export function prepareTransactionItemSelect() {
     );
 }
 
+// export function calculateItemAmount() {
+//     const quantity = Number(document.getElementById("transactionItemQuantity").value) || 0;
+//     const price = Number(document.getElementById("transactionItemPrice").value) || 0;
+//     const amount = quantity * price;
+//     document.getElementById("transactionItemAmount").value = amount.toFixed(2);
+// }
+
 export function calculateItemAmount() {
     const quantity = Number(document.getElementById("transactionItemQuantity").value) || 0;
     const price = Number(document.getElementById("transactionItemPrice").value) || 0;
-    const amount = quantity * price;
+    const transactionPrice = getTransactionPrice(price);
+    const amount = quantity * transactionPrice;
     document.getElementById("transactionItemAmount").value = amount.toFixed(2);
 }
 
@@ -151,12 +167,15 @@ form.addEventListener("submit", e => {
     }
     const quantity = Number(document.getElementById("transactionItemQuantity").value);
     const price = Number(document.getElementById("transactionItemPrice").value);
+    const transactionPrice = getTransactionPrice(price);
+
     addItem({
         service_id: selectedService.id,
         service_name: selectedService.name,
         quantity,
+        //price: transactionPrice,
         price,
-        amount: quantity * price
+        amount: quantity * transactionPrice
     });
     bootstrap.Modal.getInstance(document.getElementById("transactionItemModal")).hide();
     }
@@ -165,7 +184,7 @@ form.addEventListener("submit", e => {
 export function resetTransactionItemModal() {
     selectedService = null;
     document.getElementById("transactionItemQuantity").value = 1;
-    //document.getElementById("transactionItemPrice").value = '';
+    document.getElementById("transactionItemPrice").value = '';
     document.getElementById("transactionItemAmount").value = "0.00";
 
     if (serviceSelect) {

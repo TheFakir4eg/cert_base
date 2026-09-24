@@ -117,7 +117,8 @@ def create_transaction( certificate_id: int, client_id: int | None, user_id: int
     """
 
     certificate = _lock_certificate(certificate_id)
-
+    
+    
     validated = validate_transaction(
         certificate=certificate,
         items=items,
@@ -142,9 +143,16 @@ def create_transaction( certificate_id: int, client_id: int | None, user_id: int
             )
         )
 
-    if validated["balance_after"] == Decimal("0.00"):
+    #if validated["balance_after"] == Decimal("0.00"):
+    #    certificate.active = False
+    
+    #UPD 24.09.26
+    if (
+        certificate.is_single_use
+        or validated["balance_after"] == Decimal("0.00")
+    ):
         certificate.active = False
-
+        
     # INSERT transaction + items и UPDATE certificate
     # отправляются в БД, transaction.id становится доступен.
     db.session.flush()

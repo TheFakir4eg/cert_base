@@ -9,6 +9,7 @@ export const transaction = {
     servicegroup_id: null,
     spending_type: null,
     comment: "",
+    max_50_percent: false,
     balance: 0,
     items: []
 };
@@ -20,6 +21,7 @@ export function clearTransaction() {
     transaction.spending_type = null;
     transaction.comment = "";
     transaction.balance = 0;
+    transaction.max_50_percent = false;
     transaction.items.length = 0;
     transaction.items = [];
 }
