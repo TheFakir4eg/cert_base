@@ -1,5 +1,6 @@
 # /app/__init__.py
 
+import logging, sys
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -59,6 +60,18 @@ def register_report_filters(app):
     
 def create_app():
     app = Flask(__name__)
+    
+    # ── Логирование в stdout → docker logs ──────────────────
+    app.logger.handlers.clear()
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter(
+        "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
+    ))
+    app.logger.addHandler(handler)
+    app.logger.setLevel(logging.INFO)
+    app.logger.propagate = False
+    # ────────────────────────────────────────────────────────
+    
     register_report_filters(app)
     # app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Рекомендуется отключить
