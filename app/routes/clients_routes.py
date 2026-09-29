@@ -63,8 +63,8 @@ def list_clients():
                 flash('⚠️ Пожалуйста, заполните обязательные поля формы.', 'warning')
 
         elif action == 'delete':
-            # Обработка формы удаления места
-            client_id = request.form.get('client_id') # Получаем ID места из формы
+            # Обработка формы удаления клиента
+            client_id = request.form.get('client_id') # Получаем ID клиента из формы
 
             if client_id:
                 try:

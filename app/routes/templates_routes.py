@@ -85,50 +85,104 @@ def template_detail(template_id):
         template=template
     )
     
+# @templates_bp.route("/files", methods=["GET"])
+# @login_required
+# def get_available_template_files():
+#     base_path = Path( current_app.config["CERTIFICATE_TEMPLATES_PATH"]).resolve()
+
+#     current_app.logger.info( "Путь к макетам: %s", base_path)
+#     current_app.logger.info( "Абсолютный путь: %s", base_path.resolve())
+#     current_app.logger.info( "Существует: %s, папка: %s", base_path.exists(), base_path.is_dir())
+
+#     if not base_path.exists() or not base_path.is_dir():
+#         return jsonify([])
+
+#     allowed_extensions = current_app.config[ "ALLOWED_TEMPLATE_EXTENSIONS"]
+#     result = []
+#     current_app.logger.info(
+#         "Содержимое каталога: %s",
+#         [item.name for item in base_path.iterdir()]
+#     )
+#     for folder in sorted(base_path.iterdir()):
+#         if not folder.is_dir():
+#             continue
+#         files = []
+#         for file in sorted(folder.iterdir()):
+#             if not file.is_file():
+#                 continue
+#             extension = file.suffix.lower()
+#             if extension not in allowed_extensions:
+#                 continue
+#             relative_path = file.relative_to(base_path)
+#             files.append({
+#                 "filename": file.name,
+#                 "relative_path": relative_path.as_posix(),
+#                 "extension": extension,
+#                 "is_image": extension in {
+#                     ".jpg",
+#                     ".jpeg",
+#                     ".png",
+#                     ".webp",
+#                 },
+#             })
+#         if files:
+#             result.append({
+#                 "folder": folder.name,
+#                 "files": files,
+#             })
+#     return jsonify(result)
 @templates_bp.route("/files", methods=["GET"])
 @login_required
 def get_available_template_files():
-    base_path = Path( current_app.config["CERTIFICATE_TEMPLATES_PATH"]).resolve()
+    base_path = Path(
+        current_app.config["CERTIFICATE_TEMPLATES_PATH"]
+    ).resolve()
 
-    current_app.logger.info( "Путь к макетам: %s", base_path)
-    current_app.logger.info( "Абсолютный путь: %s", base_path.resolve())
-    current_app.logger.info( "Существует: %s, папка: %s", base_path.exists(), base_path.is_dir())
+    current_app.logger.info("Путь к макетам: %s", base_path)
+    current_app.logger.info(
+        "Существует: %s, папка: %s",
+        base_path.exists(),
+        base_path.is_dir()
+    )
 
     if not base_path.exists() or not base_path.is_dir():
         return jsonify([])
 
-    allowed_extensions = current_app.config[ "ALLOWED_TEMPLATE_EXTENSIONS"]
-    result = []
+    allowed_extensions = current_app.config["ALLOWED_TEMPLATE_EXTENSIONS"]
 
-    for folder in sorted(base_path.iterdir()):
-        if not folder.is_dir():
+    files = []
+
+    for file in sorted(base_path.iterdir()):
+        if not file.is_file():
             continue
-        files = []
-        for file in sorted(folder.iterdir()):
-            if not file.is_file():
-                continue
-            extension = file.suffix.lower()
-            if extension not in allowed_extensions:
-                continue
-            relative_path = file.relative_to(base_path)
-            files.append({
-                "filename": file.name,
-                "relative_path": relative_path.as_posix(),
-                "extension": extension,
-                "is_image": extension in {
-                    ".jpg",
-                    ".jpeg",
-                    ".png",
-                    ".webp",
-                },
-            })
-        if files:
-            result.append({
-                "folder": folder.name,
-                "files": files,
-            })
-    return jsonify(result)
 
+        extension = file.suffix.lower()
+
+        if extension not in allowed_extensions:
+            continue
+
+        files.append({
+            "filename": file.name,
+            "relative_path": file.relative_to(base_path).as_posix(),
+            "extension": extension,
+            "is_image": extension in {
+                ".jpg",
+                ".jpeg",
+                ".png",
+                ".webp",
+            },
+        })
+
+    if not files:
+        return jsonify([])
+
+    return jsonify([
+        {
+            "folder": base_path.name,
+            "files": files,
+        }
+    ])
+    
 @templates_bp.route( "/<int:template_id>/versions", methods=["POST"])
 @login_required
 def create_template_version(template_id):

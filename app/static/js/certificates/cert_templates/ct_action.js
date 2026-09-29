@@ -1,16 +1,87 @@
-// /static/js/certificates/cert_templates/ct_action.js
+import {
+    fetchAvailableFiles,
+    deleteTemplate,
+    fetchActiveTemplateVersions
+} from "./ct_api.js";
 
-import { fetchAvailableFiles, deleteTemplate, fetchActiveTemplateVersions } from "./ct_api.js";
 import { renderTemplates } from "./ct_render.js";
+
+
+function isImageFile(url) {
+    return /\.(jpg|jpeg|png|webp)(\?|$)/i.test(url);
+}
+
+
+// Открывает полноразмерный просмотр макета
+export function openTemplatePreview(url, title) {
+    const modalElement =  document.getElementById("templatePreviewModal");
+    const modalBody = document.getElementById("templatePreviewModalBody");
+    const modalTitle = document.getElementById("templatePreviewModalTitle");
+
+    if (!modalElement || !modalBody || !modalTitle) {
+        return;
+    }
+
+    modalTitle.textContent = title;
+    modalBody.innerHTML = "";
+
+    if (isImageFile(url)) {
+        const image = document.createElement("img");
+
+        image.src = url;
+        image.alt = title;
+        image.className = "certificate-template-full-preview";
+
+        modalBody.appendChild(image);
+
+    } else {
+        const iframe = document.createElement("iframe");
+
+        iframe.src = url;
+        iframe.className = "certificate-template-full-preview-pdf";
+        iframe.title = title;
+
+        modalBody.appendChild(iframe);
+    }
+
+    bootstrap.Modal
+        .getOrCreateInstance(modalElement)
+        .show();
+}
+
+
+// Инициализирует обработчик клика по превью
+export function initTemplatePreview(dom) {
+    dom.container.addEventListener("click", (event) => {
+        const image = event.target.closest( ".certificate-template-image");
+        const previewWrapper = event.target.closest( ".certificate-template-preview");
+
+        if (!image && !previewWrapper) {
+            return;
+        }
+
+        const source = image || previewWrapper;
+        const url =  source.dataset.previewUrl || source.src;
+
+        if (!url) {
+            return;
+        }
+
+        const title = source.dataset.previewTitle || "Просмотр макета";
+
+        openTemplatePreview(url, title);
+    });
+}
 
 /**
 Инициализирует обработчики компонента макетов.
 @param {Object} state
 @param {Object} dom
 */
-export function initTemplateActions(state,dom) {
-    initAddTemplateAction(state,dom);
-    initDeleteTemplateAction(state,dom);
+export function initTemplateActions(state, dom) {
+    initAddTemplateAction(state, dom);
+    initDeleteTemplateAction(state, dom);
+    initTemplatePreview(dom);
     initSelectModalFocus(dom);
 }
 
@@ -352,16 +423,17 @@ function createTemplateVersionCard( templateVersion, state, dom)
 function selectTemplateVersion( templateVersion, state, dom)
 {
     const template = {
-        // Идентификаторы сущностей БД
         template_version_id: templateVersion.id,
         template_id: templateVersion.template_id,
-        // Информация для отображения
+
         name: templateVersion.template_name,
         code: templateVersion.template_code,
         version: templateVersion.version,
         filename: templateVersion.filename,
         folder_path: templateVersion.folder_path,
-        // Источник
+
+        url: `/cert_templates/versions/${templateVersion.id}/file`,
+
         source: "pending",
     };
     state.pendingTemplates.push(template);

@@ -2,9 +2,7 @@
 
 //Получает уже привязанные к сертификату активные макеты
 export async function fetchTemplates(certificateId) {
-    const response = await fetch(
-        `/certificates/${certificateId}/templates`
-    );
+    const response = await fetch( `/certificates/${certificateId}/templates`);
     if (!response.ok) {
         throw new Error(
             `Ошибка загрузки макетов: ${response.status}`
@@ -15,9 +13,7 @@ export async function fetchTemplates(certificateId) {
 
 //Получает содержимое переменной с абсолютным путем к макетам
 export async function fetchAvailableFiles() {
-    const response = await fetch(
-        "/certificate-templates/files"
-    );
+    const response = await fetch( "/certificate-templates/files");
     if (!response.ok) {
         throw new Error(
             `Ошибка загрузки файлов макетов: ${response.status}`
@@ -27,8 +23,7 @@ export async function fetchAvailableFiles() {
 }
 
 export async function addTemplate( certificateId, data) {
-    const response = await fetch(
-        `/certificates/${certificateId}/templates`,
+    const response = await fetch( `/certificates/${certificateId}/templates`,
         {
             method: "POST",
             headers: {
@@ -48,8 +43,7 @@ export async function addTemplate( certificateId, data) {
 }
 
 export async function deleteTemplate( templateId) {
-    const response = await fetch(
-        `/certificate-templates/${templateId}`,
+    const response = await fetch( `/certificate-templates/${templateId}`,
         {
             method: "DELETE",
         }

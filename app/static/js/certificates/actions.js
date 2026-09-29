@@ -11,6 +11,9 @@ import { initClientSelect } from "./selection.js";
 import { transactionClient } from "./transaction/tr_modal.js";
 import { getSelectedServices, renderSelectedServices, setEditMode, setCreateMode, setActiveForm } from "./services.js";
 import { initCertificateTemplates } from "./cert_templates/ct_init.js";
+import { fetchTemplates } from "./cert_templates/ct_api.js";
+import { renderViewTemplateCard } from "./cert_templates/ct_render.js";
+import { openTemplatePreview } from "./cert_templates/ct_action.js";
 
 const confirmModal = new bootstrap.Modal(document.getElementById("confirmActionModal"));
 const confirmText = document.getElementById("confirmActionModalText");
@@ -78,15 +81,95 @@ export async function openCertificateView(row) {
     document.getElementById("view_mol").value = row.dataset.molName || "";
     document.getElementById("view_note").value = row.dataset.note || "";
 
+    document
+    .getElementById("view_templates")
+    ?.addEventListener("click", (event) => {
+
+        const image = event.target.closest(
+            ".certificate-template-image"
+        );
+
+        const previewWrapper = event.target.closest(
+            ".certificate-template-preview"
+        );
+
+        if (!image && !previewWrapper) {
+            return;
+        }
+
+        const source = image || previewWrapper;
+
+        const url =
+            source.dataset.previewUrl ||
+            source.src;
+
+        if (!url) {
+            return;
+        }
+
+        const title =
+            source.dataset.previewTitle ||
+            "Просмотр макета";
+
+        openTemplatePreview(url, title);
+    });
+    
     // Услуги
     await loadViewServices(certId);
-
+    // Макеты
+    await loadViewTemplates(certId);
     // История
     await loadViewTransactions(certId);
 
     bootstrap.Modal
         .getOrCreateInstance(modalElement)
         .show();
+}
+
+async function loadViewTemplates(certId) {
+    const container =
+        document.getElementById("view_templates");
+
+    if (!container) {
+        console.error(
+            "Контейнер макетов просмотра не найден"
+        );
+        return;
+    }
+
+    container.innerHTML = "";
+
+    try {
+        const templates = await fetchTemplates(certId);
+
+        if (!templates.length) {
+            container.innerHTML = `
+                <div class="text-muted small">
+                    Макеты не добавлены
+                </div>
+            `;
+            return;
+        }
+
+        for (const template of templates) {
+            const card =
+                renderViewTemplateCard(template);
+
+            container.appendChild(card);
+        }
+
+    } catch (error) {
+        console.error(
+            "Ошибка загрузки макетов:",
+            error
+        );
+
+        container.innerHTML = `
+            <div class="text-danger small">
+                Не удалось загрузить макеты
+            </div>
+        `;
+    }
 }
 
 function getCertificateStatusName(status) {

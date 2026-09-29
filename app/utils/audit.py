@@ -295,16 +295,41 @@ def audit_update(old_data: dict,obj,extra_data=None,comment=None,action="update"
             exc_info=True
         )
                 
+# def get_template_links_snapshot(cert):
+#     """Снимок текущих связей сертификата с версиями макетов"""
+#     result = []
+#     for link in cert.template_links:
+#         tv = link.template_version  # relationship
+#         result.append({
+#             "link_id": link.id,
+#             "template_version_id": link.template_version_id,
+#             "version": getattr(tv, "version", None) if tv else None,
+#             "name": getattr(tv, "name", None) if tv else None,  # если есть
+#             "is_active": getattr(tv, "is_active", None) if tv else None,
+#         })
+#     return result
+
 def get_template_links_snapshot(cert):
-    """Снимок текущих связей сертификата с версиями макетов"""
+    """Снимок текущих связей сертификата с версиями макетов."""
+
     result = []
+
     for link in cert.template_links:
-        tv = link.template_version  # relationship
+        tv = link.template_version
+
         result.append({
-            "link_id": link.id,
+            "certificate_id": link.certificate_id,
             "template_version_id": link.template_version_id,
-            "version": getattr(tv, "version", None) if tv else None,
-            "name": getattr(tv, "name", None) if tv else None,  # если есть
-            "is_active": getattr(tv, "is_active", None) if tv else None,
+            "template_id": tv.template_id if tv else None,
+            "template_name": (
+                tv.template.name
+                if tv and tv.template
+                else None
+            ),
+            "version": tv.version if tv else None,
+            "filename": tv.filename if tv else None,
+            "folder_path": tv.folder_path if tv else None,
+            "is_active": tv.is_active if tv else None,
         })
+
     return result

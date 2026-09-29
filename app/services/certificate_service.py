@@ -728,21 +728,48 @@ def update_certificate(form_data, new_templates_data: list, deleted_template_ids
                         service_id=service_id
                     )
                 )
-        # 3. Обработка удаления макетов (Templates)
+        # 3. Обработка удаления макетов
         if deleted_template_ids:
-            for tpl in deleted_template_ids:
-                deactivate_certificate_template(int(tpl))
+            for template_version_id in deleted_template_ids:
+                link = db.session.get(
+                    CertificateTemplateLink,
+                    (cert.id, int(template_version_id))
+                )
 
-        # 4. Обработка добавления новых макетов (Pending Templates)
+                if link:
+                    db.session.delete(link)
+
+        # 4. Обработка добавления новых макетов
         for template_data in new_templates_data:
-            new_tpl = CertificateTemplate(
-                certificate_id=cert.id,
-                name=template_data["name"],
-                folder_path=template_data["folder_path"],
-                filename=template_data["filename"],
-                user_id=user_id,
+            template_version_id = template_data.get("template_version_id")
+
+            if not template_version_id:
+                raise ValueError("У макета не указан template_version_id")
+
+            template_version = db.session.get(
+                TemplateVersion,
+                int(template_version_id)
             )
-            db.session.add(new_tpl)
+
+            if not template_version:
+                raise ValueError(
+                    f"Версия шаблона ID={template_version_id} не найдена"
+                )
+
+            existing_link = db.session.get(
+                CertificateTemplateLink,
+                (cert.id, template_version.id)
+            )
+
+            if existing_link:
+                continue
+
+            db.session.add(
+                CertificateTemplateLink(
+                    certificate_id=cert.id,
+                    template_version_id=template_version.id,
+                )
+            )
         db.session.flush()   # чтобы relationship и id были актуальны
         # ====================== АУДИТ ======================
         extra_new = {
