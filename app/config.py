@@ -17,7 +17,8 @@ class Config:
     
     MAX_BULK = 500
     
-    CERTIFICATE_TEMPLATES_PATH = r"\\alpha.local\fs\ДОН - Администрация\Certificates_design"
+    #CERTIFICATE_TEMPLATES_PATH = r"\\alpha.local\fs\ДОН - Администрация\Certificates_design"
+    CERTIFICATE_TEMPLATES_PATH = os.getenv( "CERTIFICATE_TEMPLATES_PATH",  r"\\alpha.local\fs\ДОН - Администрация\Certificates_design")
     
     ALLOWED_TEMPLATE_EXTENSIONS = {
         ".jpg",

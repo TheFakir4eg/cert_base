@@ -27,6 +27,9 @@ services:
       DB_NAME: cert_db
       SECRET_KEY: change_this_super_secret_key
       RUN_SEED: "true"
+      CERTIFICATE_TEMPLATES_PATH: /mnt/certificates_design
+    volumes:
+      - /mnt/certificates_design:/mnt/certificates_design:ro
     ports:
       - "58888:5000"
 
